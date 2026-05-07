@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cinema Match</title>
+
+  <link rel="stylesheet" href="style.css"/>
+</head>
+
+<body>
+<header class="site-header">
+  <nav class="site-nav">
+    <a href="#" class="site-nav-link">Accueil</a>
+    <a href="#" class="site-nav-link">Vitrine</a>
+    <img class="site-logo" src="./assets/site/logo.jpg" alt="My Movies Poster" />
+    <a href="#" class="site-nav-link active">Mon Poster</a>
+    <a href="#" class="site-nav-link">FAQ</a>
+  </nav>
+</header>
+
+<main class="page-content">
+
+<!-- QUIZ -->
+<div id="quiz">
+  <div class="quiz-card" id="quizCard">
+    <div id="questionStep" class="question-step"></div>
+    <h2 id="questionTitle" class="question-title"></h2>
+    <div id="answersGrid" class="answers-grid"></div>
+    <div class="quiz-nav">
+      <button id="prevQuestionBtn" type="button">Précédent</button>
+      <button id="restartQuizBtn" type="button">Revenir au début</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-bar">
+  <div class="progress"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="resultats"></div>
+
+<!-- LOADING -->
+<div id="loadingScreen" class="loading hidden">
+  Création de ton univers cinéma...
+</div>
+
+<!-- POSTER + EDITOR -->
+<div id="posterWorkspace">
+  <div id="posterContainer">
+
+    <div class="poster-header">
+      <div class="poster-title">Ton univers cinéma</div>
+      <div class="poster-subtitle">Création personnalisée</div>
+    </div>
+
+    <div class="poster-grid" id="posterGrid"></div>
+  </div>
+
+  <div id="posterEditor" class="poster-editor">
+    <h3>Personnaliser</h3>
+    <label for="titleEditorInput">Titre</label>
+    <input id="titleEditorInput" type="text" value="Ton univers cinéma" />
+
+    <label for="subtitleEditorInput">Sous-titre</label>
+    <input id="subtitleEditorInput" type="text" value="Création personnalisée" />
+
+    <label for="posterCountSelect">Nombre d'images</label>
+    <select id="posterCountSelect">
+      <option value="25">25</option>
+      <option value="48">48</option>
+      <option value="100" selected>100</option>
+    </select>
+
+    <button id="resetPosterText" type="button">Réinitialiser texte</button>
+    <button id="downloadPoster">Télécharger</button>
+    <button id="sharePoster" style="display:none;">Partager</button>
+  </div>
+</div>
+
+</main>
+
+<section class="site-services">
+  <div class="service-item">
+    <div class="service-icon"><img src="./assets/site/livraison.png" alt="Livraison"></div>
+    <div class="service-title">Livraison</div>
+    <div class="service-text">dans toute la France</div>
+  </div>
+  <div class="service-item">
+    <div class="service-icon"><img src="./assets/site/paiement.png" alt="Paiement"></div>
+    <div class="service-title">Paiement Sécurisé</div>
+    <div class="service-text">Mastercard / Visa / Amex / Paypal</div>
+  </div>
+  <div class="service-item">
+    <div class="service-icon"><img src="./assets/site/contact.png" alt="Contact"></div>
+    <div class="service-title">Conseil et vente</div>
+    <div class="service-text">contact@mymoviesposter.fr</div>
+  </div>
+  <div class="service-item">
+    <div class="service-icon"><img src="./assets/site/remboursement.png" alt="Remboursement"></div>
+    <div class="service-title">Remboursement</div>
+    <div class="service-text">sous 14 jours</div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="#">Qui sommes-nous</a>
+    <a href="#">Contactez-nous</a>
+    <a href="#">Conditions Générales de Vente</a>
+    <a href="#">Mentions légales</a>
+  </div>
+  <img class="site-logo footer-logo" src="./assets/site/logo.jpg" alt="My Movies Poster" />
+  <div class="footer-socials">
+    <a href="#" aria-label="Facebook"><img src="./assets/site/facebook.png" alt="Facebook"></a>
+    <a href="#" aria-label="Instagram"><img src="./assets/site/instagram.png" alt="Instagram"></a>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
