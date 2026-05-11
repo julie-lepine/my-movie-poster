@@ -8,128 +8,6 @@ let currentQuestionIndex = 0;
 const DEFAULT_TITLE = "Ton univers cinéma";
 const DEFAULT_SUBTITLE = "Création personnalisée";
 
-const quizData = [
-  {
-    id: "palette",
-    question: "Si ta vie avait une palette de couleurs, ce serait plutôt :",
-    options: [
-      { value: "cyberpunk", label: "Néons froids" },
-      { value: "vintage", label: "Tons chauds vintage" },
-      { value: "dark", label: "Noir et blanc" },
-      { value: "dreamy", label: "Couleurs pastel" },
-      { value: "energetic", label: "Couleurs saturées" },
-    ],
-  },
-  {
-    id: "ambiance",
-    question: "Quelle ambiance te correspond le plus ?",
-    options: [
-      { value: "nostalgic", label: "Mélancolique" },
-      { value: "rebellious", label: "Chaotique" },
-      { value: "dreamy", label: "Romantique" },
-      { value: "mysterious", label: "Mystérieuse" },
-      { value: "energetic", label: "Ã‰nergique" },
-    ],
-  },
-  {
-    id: "persona",
-    question: "Choisis un mot qui te définit le mieux :",
-    options: [
-      { value: "dreamy", label: "Rêveur" },
-      { value: "epic", label: "Ambitieux" },
-      { value: "dark", label: "Solitaire" },
-      { value: "rebellious", label: "Rebelle" },
-      { value: "peaceful", label: "Calme" },
-      { value: "energetic", label: "Intense" },
-    ],
-  },
-  {
-    id: "soundtrack",
-    question: "Quelle musique imaginaire accompagnerait ton poster ?",
-    options: [
-      { value: "cyberpunk", label: "Synthwave" },
-      { value: "vintage", label: "Jazz" },
-      { value: "dreamy", label: "Lo-fi" },
-      { value: "rebellious", label: "Rock brut" },
-      { value: "epic", label: "Orchestral" },
-      { value: "dark", label: "Silence pesant" },
-    ],
-  },
-  {
-    id: "emotion",
-    question: "Quelle émotion veux-tu ressentir en regardant ton poster ?",
-    options: [
-      { value: "epic", label: "Motivation" },
-      { value: "nostalgic", label: "Nostalgie" },
-      { value: "mysterious", label: "Mystère" },
-      { value: "peaceful", label: "Apaisement" },
-      { value: "energetic", label: "Adrénaline" },
-      { value: "dark", label: "Solitude" },
-    ],
-  },
-  {
-    id: "world",
-    question: "Tu préfères les univers :",
-    options: [
-      { value: "minimalist", label: "Minimalistes" },
-      { value: "surreal", label: "Surréalistes" },
-      { value: "detailed", label: "Détaillés" },
-      { value: "urban", label: "Réalistes" },
-      { value: "vintage", label: "Rétro" },
-      { value: "futuristic", label: "Modernes" },
-    ],
-  },
-];
-
-const optionImages = {
-  palette: {
-    cyberpunk: "./assets/quiz/palette-cyberpunk.jpg",
-    vintage: "./assets/quiz/palette-vintage.jpg",
-    dark: "./assets/quiz/palette-dark.jpg",
-    dreamy: "./assets/quiz/palette-dreamy.jpg",
-    energetic: "./assets/quiz/palette-energetic.jpg",
-  },
-  ambiance: {
-    nostalgic: "./assets/quiz/ambiance-nostalgic.jpg",
-    rebellious: "./assets/quiz/ambiance-rebellious.jpg",
-    dreamy: "./assets/quiz/ambiance-dreamy.jpg",
-    mysterious: "./assets/quiz/ambiance-mysterious.jpg",
-    energetic: "./assets/quiz/ambiance-energetic.jpg",
-  },
-  persona: {
-    dreamy: "./assets/quiz/persona-dreamy.jpg",
-    epic: "./assets/quiz/persona-epic.jpg",
-    dark: "./assets/quiz/persona-dark.jpg",
-    rebellious: "./assets/quiz/persona-rebellious.jpg",
-    peaceful: "./assets/quiz/persona-peaceful.jpg",
-    energetic: "./assets/quiz/persona-energetic.jpg",
-  },
-  soundtrack: {
-    cyberpunk: "./assets/quiz/soundtrack-cyberpunk.jpg",
-    vintage: "./assets/quiz/soundtrack-vintage.jpg",
-    dreamy: "./assets/quiz/soundtrack-dreamy.jpg",
-    rebellious: "./assets/quiz/soundtrack-rebellious.jpg",
-    epic: "./assets/quiz/soundtrack-epic.jpg",
-    dark: "./assets/quiz/soundtrack-dark.jpg",
-  },
-  emotion: {
-    epic: "./assets/quiz/emotion-epic.jpg",
-    nostalgic: "./assets/quiz/emotion-nostalgic.jpg",
-    mysterious: "./assets/quiz/emotion-mysterious.jpg",
-    peaceful: "./assets/quiz/emotion-peaceful.jpg",
-    energetic: "./assets/quiz/emotion-energetic.jpg",
-    dark: "./assets/quiz/emotion-dark.jpg",
-  },
-  world: {
-    minimalist: "./assets/quiz/world-minimalist.jpg",
-    surreal: "./assets/quiz/world-surreal.jpg",
-    detailed: "./assets/quiz/world-detailed.jpg",
-    urban: "./assets/quiz/world-urban.jpg",
-    vintage: "./assets/quiz/world-vintage.jpg",
-    futuristic: "./assets/quiz/world-futuristic.jpg",
-  },
-};
-
 // =====================
 // DOM
 // =====================
@@ -151,512 +29,9 @@ const titleEditorInput = document.getElementById("titleEditorInput");
 const subtitleEditorInput = document.getElementById("subtitleEditorInput");
 const resetPosterTextBtn = document.getElementById("resetPosterText");
 const posterCountSelect = document.getElementById("posterCountSelect");
-
-// =====================
-// DB FILMS
-// =====================
-const filmsDB = [
-  {
-    titre: "12 hommes en colère",
-    image: "./assets/img/12 hommes en colère.jpg",
-    tags: ["aventure", "introspection", "drame", "melancolie"],
-  },
-  {
-    titre: "3 Billboards, Les panneaux de la vengeance",
-    image: "./assets/img/3 Billboards, Les panneaux de la vengeance.jpg",
-    tags: ["nature", "soleil", "psychologique", "imaginaire"],
-  },
-  {
-    titre: "American Beauty",
-    image: "./assets/img/American Beauty.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "Annie Hall",
-    image: "./assets/img/Annie Hall.jpg",
-    tags: ["imaginaire", "renouveau", "amour", "emotion"],
-  },
-  {
-    titre: "Arrête-moi si tu peux",
-    image: "./assets/img/Arrête-moi si tu peux.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "Astérix et Obélix   Mission Cléopâtre",
-    image: "./assets/img/Astérix et Obélix _ Mission Cléopâtre.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "Bienvenue à Gattaca",
-    image: "./assets/img/Bienvenue à Gattaca.jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "Big Fish",
-    image: "./assets/img/Big Fish.jpg",
-    tags: ["imaginaire", "renouveau", "amour", "emotion"],
-  },
-  {
-    titre: "Billy Elliot",
-    image: "./assets/img/Billy Elliot.jpg",
-    tags: ["aventure", "introspection", "drame", "melancolie"],
-  },
-  {
-    titre: "Casino Royale",
-    image: "./assets/img/Casino Royale.jpg",
-    tags: ["melancolie", "sombre", "nature", "soleil"],
-  },
-  {
-    titre: "Chantons sous la Pluie",
-    image: "./assets/img/Chantons sous la Pluie.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "Cloud Atlas",
-    image: "./assets/img/Cloud Atlas.jpg",
-    tags: ["melancolie", "sombre", "nature", "soleil"],
-  },
-  {
-    titre: "Coup de Foudre à Notting Hill",
-    image: "./assets/img/Coup de Foudre à Notting Hill.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "des hommes d honneur",
-    image: "./assets/img/des hommes d_honneur.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "Diamants sur Canapé",
-    image: "./assets/img/Diamants sur Canapé.jpg",
-    tags: ["drame", "melancolie", "sombre", "nature"],
-  },
-  {
-    titre: "Drive",
-    image: "./assets/img/Drive.jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "eternal sunshine of the spotless mind",
-    image: "./assets/img/eternal sunshine of the spotless mind.jpg",
-    tags: ["psychologique", "imaginaire", "renouveau", "amour"],
-  },
-  {
-    titre: "Fight Club",
-    image: "./assets/img/Fight Club.jpg",
-    tags: ["dynamique", "aventure", "introspection", "drame"],
-  },
-  {
-    titre: "Forrest Gump",
-    image: "./assets/img/Forrest Gump.jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "Full Metal Jacket",
-    image: "./assets/img/Full Metal Jacket.jpg",
-    tags: ["aventure", "introspection", "drame", "melancolie"],
-  },
-  {
-    titre: "Gone Girl",
-    image: "./assets/img/Gone Girl.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "Good Bye, Lenin !",
-    image: "./assets/img/Good Bye, Lenin !.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "Gran Torino",
-    image: "./assets/img/Gran Torino.jpg",
-    tags: ["drame", "melancolie", "sombre", "nature"],
-  },
-  {
-    titre: "Happiness Therapy",
-    image: "./assets/img/Happiness Therapy.jpg",
-    tags: ["renouveau", "amour", "emotion", "dynamique"],
-  },
-  {
-    titre: "Il était temps",
-    image: "./assets/img/Il était temps.jpg",
-    tags: ["melancolie", "sombre", "nature", "soleil"],
-  },
-  {
-    titre: "Il faut sauver le soldat Ryan",
-    image: "./assets/img/Il faut sauver le soldat Ryan.jpg",
-    tags: ["dynamique", "aventure", "introspection", "drame"],
-  },
-  {
-    titre: "Imitation Game",
-    image: "./assets/img/Imitation Game.jpg",
-    tags: ["aventure", "introspection", "drame", "melancolie"],
-  },
-  {
-    titre: "Incendies",
-    image: "./assets/img/Incendies.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "Inception(1)",
-    image: "./assets/img/Inception(1).jpg",
-    tags: ["renouveau", "amour", "emotion", "dynamique"],
-  },
-  {
-    titre: "Inception",
-    image: "./assets/img/Inception.jpg",
-    tags: ["renouveau", "amour", "emotion", "dynamique"],
-  },
-  {
-    titre: "Je vais bien, ne t’en fais pas",
-    image: "./assets/img/Je vais bien, ne t’en fais pas.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "Joyeux Noël",
-    image: "./assets/img/Joyeux Noël.jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "Jumanji (1995)",
-    image: "./assets/img/Jumanji (1995).jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "kick ass",
-    image: "./assets/img/kick ass.jpg",
-    tags: ["dynamique", "aventure", "introspection", "drame"],
-  },
-  {
-    titre: "L arnacoeur",
-    image: "./assets/img/L_arnacoeur.jpg",
-    tags: ["nature", "soleil", "psychologique", "imaginaire"],
-  },
-  {
-    titre: "L Odyssée de P",
-    image: "./assets/img/L_Odyssée de P.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "L’Illusionniste",
-    image: "./assets/img/L’Illusionniste.jpg",
-    tags: ["nature", "soleil", "psychologique", "imaginaire"],
-  },
-  {
-    titre: "L’Imaginarium du Docteur Parnassus",
-    image: "./assets/img/L’Imaginarium du Docteur Parnassus.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "La Classe américaine",
-    image: "./assets/img/La Classe américaine.jpg",
-    tags: ["psychologique", "imaginaire", "renouveau", "amour"],
-  },
-  {
-    titre: "La Grande Vadrouille",
-    image: "./assets/img/La Grande Vadrouille.jpg",
-    tags: ["soleil", "psychologique", "imaginaire", "renouveau"],
-  },
-  {
-    titre: "La La Land",
-    image: "./assets/img/La La Land.jpg",
-    tags: ["aventure", "introspection", "drame", "melancolie"],
-  },
-  {
-    titre: "La ligne verte",
-    image: "./assets/img/La ligne verte.jpg",
-    tags: ["renouveau", "amour", "emotion", "dynamique"],
-  },
-  {
-    titre: "La Liste de Schindler",
-    image: "./assets/img/La Liste de Schindler.jpg",
-    tags: ["melancolie", "sombre", "nature", "soleil"],
-  },
-  {
-    titre: "La Mélodie du bonheur",
-    image: "./assets/img/La Mélodie du bonheur.jpg",
-    tags: ["melancolie", "sombre", "nature", "soleil"],
-  },
-  {
-    titre: "La Rose Pourpre du Caire",
-    image: "./assets/img/La Rose Pourpre du Caire.jpg",
-    tags: ["nature", "soleil", "psychologique", "imaginaire"],
-  },
-  {
-    titre: "La Vie est Belle (1946)",
-    image: "./assets/img/La Vie est Belle (1946).jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "La Vie est Belle (1997)",
-    image: "./assets/img/La Vie est Belle (1997).jpg",
-    tags: ["soleil", "psychologique", "imaginaire", "renouveau"],
-  },
-  {
-    titre: "La Vie rêvée de Walter Mitty",
-    image: "./assets/img/La Vie rêvée de Walter Mitty.jpg",
-    tags: ["nature", "soleil", "psychologique", "imaginaire"],
-  },
-  {
-    titre: "Le Cercle des poètes disparus",
-    image: "./assets/img/Le Cercle des poètes disparus.jpg",
-    tags: ["aventure", "introspection", "drame", "melancolie"],
-  },
-  {
-    titre: "Le Château de ma Mère",
-    image: "./assets/img/Le Château de ma Mère.jpg",
-    tags: ["dynamique", "aventure", "introspection", "drame"],
-  },
-  {
-    titre: "Le Dîner de cons",
-    image: "./assets/img/Le Dîner de cons.jpg",
-    tags: ["drame", "melancolie", "sombre", "nature"],
-  },
-  {
-    titre: "Le Discours d un roi",
-    image: "./assets/img/Le Discours d_un roi.jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "Le Fabuleux Destin d Amélie Poulain",
-    image: "./assets/img/Le Fabuleux Destin d_Amélie Poulain.jpg",
-    tags: ["renouveau", "amour", "emotion", "dynamique"],
-  },
-  {
-    titre: "Le Fugitif",
-    image: "./assets/img/Le Fugitif.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "Le Monde de Charlie",
-    image: "./assets/img/Le Monde de Charlie.jpg",
-    tags: ["soleil", "psychologique", "imaginaire", "renouveau"],
-  },
-  {
-    titre: "Le Prénom",
-    image: "./assets/img/Le Prénom.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "Le Prestige",
-    image: "./assets/img/Le Prestige.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "Léon",
-    image: "./assets/img/Léon.jpg",
-    tags: ["dynamique", "aventure", "introspection", "drame"],
-  },
-  {
-    titre: "Les bronzés font du sk",
-    image: "./assets/img/Les bronzés font du sk.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "Les Enfants du Marais",
-    image: "./assets/img/Les Enfants du Marais.jpg",
-    tags: ["soleil", "psychologique", "imaginaire", "renouveau"],
-  },
-  {
-    titre: "Les Évadés",
-    image: "./assets/img/Les Évadés.jpg",
-    tags: ["soleil", "psychologique", "imaginaire", "renouveau"],
-  },
-  {
-    titre: "Les Fils de l homme",
-    image: "./assets/img/Les Fils de l_homme.jpg",
-    tags: ["dynamique", "aventure", "introspection", "drame"],
-  },
-  {
-    titre: "Les Poupées Russes",
-    image: "./assets/img/Les Poupées Russes.jpg",
-    tags: ["imaginaire", "renouveau", "amour", "emotion"],
-  },
-  {
-    titre: "Lord of War",
-    image: "./assets/img/Lord of War.jpg",
-    tags: ["renouveau", "amour", "emotion", "dynamique"],
-  },
-  {
-    titre: "Lost in Translation",
-    image: "./assets/img/Lost in Translation.jpg",
-    tags: ["soleil", "psychologique", "imaginaire", "renouveau"],
-  },
-  {
-    titre: "Love Actually",
-    image: "./assets/img/Love Actually.jpg",
-    tags: ["psychologique", "imaginaire", "renouveau", "amour"],
-  },
-  {
-    titre: "Match Point",
-    image: "./assets/img/Match Point.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "Matrix",
-    image: "./assets/img/Matrix.jpg",
-    tags: ["soleil", "psychologique", "imaginaire", "renouveau"],
-  },
-  {
-    titre: "Melancholia",
-    image: "./assets/img/Melancholia.jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "Mélodie en sous-sol",
-    image: "./assets/img/Mélodie en sous-sol.jpg",
-    tags: ["dynamique", "aventure", "introspection", "drame"],
-  },
-  {
-    titre: "Memento",
-    image: "./assets/img/Memento.jpg",
-    tags: ["dynamique", "aventure", "introspection", "drame"],
-  },
-  {
-    titre: "Minority Report",
-    image: "./assets/img/Minority Report.jpg",
-    tags: ["drame", "melancolie", "sombre", "nature"],
-  },
-  {
-    titre: "Minuit à Paris",
-    image: "./assets/img/Minuit à Paris.jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "Mommy",
-    image: "./assets/img/Mommy.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "Monty Python   Sacré Graal !",
-    image: "./assets/img/Monty Python _ Sacré Graal !.jpg",
-    tags: ["drame", "melancolie", "sombre", "nature"],
-  },
-  {
-    titre: "Mr. Nobody",
-    image: "./assets/img/Mr. Nobody.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "Mustang",
-    image: "./assets/img/Mustang.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "Neverland",
-    image: "./assets/img/Neverland.jpg",
-    tags: ["amour", "emotion", "dynamique", "aventure"],
-  },
-  {
-    titre: "Orgueil et Préjugés",
-    image: "./assets/img/Orgueil et Préjugés.jpg",
-    tags: ["introspection", "drame", "melancolie", "sombre"],
-  },
-  {
-    titre: "OSS 117   Le Caire, nid d espions",
-    image: "./assets/img/OSS 117 _ Le Caire, nid d_espions.jpg",
-    tags: ["psychologique", "imaginaire", "renouveau", "amour"],
-  },
-  {
-    titre: "Premier Contact",
-    image: "./assets/img/Premier Contact.jpg",
-    tags: ["introspection", "drame", "melancolie", "sombre"],
-  },
-  {
-    titre: "Pulp Fiction",
-    image: "./assets/img/Pulp Fiction.jpg",
-    tags: ["psychologique", "imaginaire", "renouveau", "amour"],
-  },
-  {
-    titre: "Rain Man",
-    image: "./assets/img/Rain Man.jpg",
-    tags: ["psychologique", "imaginaire", "renouveau", "amour"],
-  },
-  {
-    titre: "Requiem for a Dream",
-    image: "./assets/img/Requiem for a Dream.jpg",
-    tags: ["psychologique", "imaginaire", "renouveau", "amour"],
-  },
-  {
-    titre: "Sam, je suis Sam",
-    image: "./assets/img/Sam, je suis Sam.jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "sherlock holmes (2009)",
-    image: "./assets/img/sherlock holmes (2009).jpg",
-    tags: ["melancolie", "sombre", "nature", "soleil"],
-  },
-  {
-    titre: "shutter island",
-    image: "./assets/img/shutter island.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "Sixième Sens",
-    image: "./assets/img/Sixième Sens.jpg",
-    tags: ["melancolie", "sombre", "nature", "soleil"],
-  },
-  {
-    titre: "Slumdog Millionaire",
-    image: "./assets/img/Slumdog Millionaire.jpg",
-    tags: ["drame", "melancolie", "sombre", "nature"],
-  },
-  {
-    titre: "Snatch, tu braques ou tu raques",
-    image: "./assets/img/Snatch, tu braques ou tu raques.jpg",
-    tags: ["emotion", "dynamique", "aventure", "introspection"],
-  },
-  {
-    titre: "The Ghost Writer",
-    image: "./assets/img/The Ghost Writer.jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "The Grand Budapest Hotel",
-    image: "./assets/img/The Grand Budapest Hotel.jpg",
-    tags: ["sombre", "nature", "soleil", "psychologique"],
-  },
-  {
-    titre: "The social network",
-    image: "./assets/img/The social network.jpg",
-    tags: ["imaginaire", "renouveau", "amour", "emotion"],
-  },
-  {
-    titre: "The Truman Show",
-    image: "./assets/img/The Truman Show.jpg",
-    tags: ["dynamique", "aventure", "introspection", "drame"],
-  },
-  {
-    titre: "Un Air de Famille",
-    image: "./assets/img/Un Air de Famille.jpg",
-    tags: ["soleil", "psychologique", "imaginaire", "renouveau"],
-  },
-  {
-    titre: "Virgin Suicides",
-    image: "./assets/img/Virgin Suicides.jpg",
-    tags: ["imaginaire", "renouveau", "amour", "emotion"],
-  },
-  {
-    titre: "Vol au-dessus d’un Nid de Coucou",
-    image: "./assets/img/Vol au-dessus d’un Nid de Coucou.jpg",
-    tags: ["aventure", "introspection", "drame", "melancolie"],
-  },
-  {
-    titre: "Watchmen   Les Gardiens",
-    image: "./assets/img/Watchmen _ Les Gardiens.jpg",
-    tags: ["nature", "soleil", "psychologique", "imaginaire"],
-  },
-  {
-    titre: "Will Hunting",
-    image: "./assets/img/Will Hunting.jpg",
-    tags: ["introspection", "drame", "melancolie", "sombre"],
-  },
-  {
-    titre: "Wiplash",
-    image: "./assets/img/Wiplash.jpg",
-    tags: ["aventure", "introspection", "drame", "melancolie"],
-  },
-];
+const posterPreviewViewport = document.getElementById("posterPreviewViewport");
+const posterPreviewScaleSlot = document.getElementById("posterPreviewScaleSlot");
+const posterMagnifier = document.getElementById("posterMagnifier");
 
 // =====================
 // MAPPING
@@ -982,6 +357,8 @@ function runFinal() {
 
     // REVEAL ANIMATION
     revealPoster();
+
+    setTimeout(scheduleMagnifierCloneRefresh, 950);
   }, 1200);
 }
 
@@ -996,17 +373,33 @@ function generatePoster(films) {
   const requestedCount = Number(posterCountSelect?.value || 100);
   const allowedCounts = [25, 48, 100];
   const safeCount = allowedCounts.includes(requestedCount) ? requestedCount : 100;
+
+  if (posterPreviewViewport) {
+    posterPreviewViewport.dataset.posterLayout = String(safeCount);
+  }
+  if (safeCount !== 100 && posterMagnifier) {
+    posterMagnifier.hidden = true;
+    posterMagnifier.setAttribute("aria-hidden", "true");
+    const magInner = posterMagnifier.querySelector(".poster-magnifier-inner");
+    if (magInner) magInner.innerHTML = "";
+  }
+
   const layoutByCount = {
     25: { cols: 5, gap: 8 },
-    48: { cols: 8, gap: 7 },
-    100: { cols: 10, gap: 6 },
+    /* 6 × 8 : vignettes plus larges, lignes étirées sur la hauteur A2 */
+    48: { cols: 6, gap: 12 },
+    /* 8 col × 13 lignes (12×8 + 4) ; queue flex pour la dernière ligne */
+    100: { cols: 8, gap: 10 },
   };
   const currentLayout = layoutByCount[safeCount] || layoutByCount[100];
   const cols = currentLayout.cols;
   const rows = Math.ceil(safeCount / cols);
 
+  poster.classList.toggle("poster-sheet--fill-movie-grid", safeCount === 48);
+
   // reset grid
   grid.innerHTML = "";
+  grid.dataset.layout = String(safeCount);
   grid.style.setProperty("--poster-cols", String(cols));
   grid.style.setProperty("--poster-rows", String(rows));
   grid.style.setProperty("--poster-gap", `${currentLayout.gap}px`);
@@ -1034,9 +427,11 @@ function generatePoster(films) {
 
   poster.insertBefore(header, grid);
 
-  // FILMS
-  films.slice(0, safeCount).forEach((f, i) => {
+  const filmsToShow = films.slice(0, safeCount);
+  const remainder = safeCount % cols;
+  const mainCount = remainder === 0 ? safeCount : safeCount - remainder;
 
+  function appendFilmCard(f, i, parent = grid) {
     const card = document.createElement("div");
     card.className = "poster-film";
 
@@ -1046,16 +441,264 @@ function generatePoster(films) {
 
     card.innerHTML = `
       <img src="${f.image}">
+      <div class="film-info">
       <div class="film-title">${f.titre}</div>
+      ${f.year ? `<div class="film-year">${f.year}</div>` : ""}
+      <img class="film-circle" src="./assets/site/circle.png" alt="">
+      </div>
     `;
 
-    grid.appendChild(card);
+    parent.appendChild(card);
 
-    // animation reveal
     setTimeout(() => {
       card.style.opacity = "1";
       card.style.transform = "scale(1)";
     }, i * 28);
+    return card;
+  }
+
+  for (let i = 0; i < mainCount; i++) {
+    appendFilmCard(filmsToShow[i], i, grid);
+  }
+
+  if (remainder > 0) {
+    const tail = document.createElement("div");
+    tail.className = "poster-grid-tail";
+    tail.style.setProperty("--poster-tail-count", String(remainder));
+    for (let j = 0; j < remainder; j++) {
+      const i = mainCount + j;
+      appendFilmCard(filmsToShow[i], i, tail);
+    }
+    grid.appendChild(tail);
+  }
+
+  scheduleMagnifierCloneRefresh();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(syncPosterLayoutMetrics);
+  });
+  grid.querySelectorAll(".poster-film > img").forEach((img) => {
+    if (img.complete) return;
+    img.addEventListener(
+      "load",
+      () => requestAnimationFrame(syncPosterLayoutMetrics),
+      { passive: true }
+    );
+  });
+
+  const footerLogo = poster.querySelector(".poster-footer-logo");
+  if (footerLogo && !footerLogo.complete) {
+    footerLogo.addEventListener(
+      "load",
+      () => requestAnimationFrame(syncPosterLayoutMetrics),
+      { passive: true }
+    );
+  }
+}
+
+function collectPosterFilmCards(grid) {
+  return [
+    ...grid.querySelectorAll(":scope > .poster-film"),
+    ...grid.querySelectorAll(":scope > .poster-grid-tail .poster-film"),
+  ];
+}
+
+/** Header + footer = hauteur de la plus grande carte (25 / 48 / 100), avec convergence si la grille 1fr réagit. */
+function syncPosterHeaderFooterBandHeight() {
+  const posterEl = document.getElementById("posterContainer");
+  const grid = document.getElementById("posterGrid");
+  if (!posterEl || !grid || posterWorkspace.style.display === "none") return;
+
+  const cards = collectPosterFilmCards(grid);
+  if (!cards.length) {
+    posterEl.style.removeProperty("--poster-band-height");
+    posterEl.removeAttribute("data-band-synced");
+    return;
+  }
+
+  let prevApplied = -2;
+  for (let step = 0; step < 12; step++) {
+    let maxH = 0;
+    for (const el of collectPosterFilmCards(grid)) {
+      maxH = Math.max(maxH, el.offsetHeight);
+    }
+    if (maxH < 8) return;
+
+    const rounded = Math.round(maxH);
+    if (rounded === prevApplied) break;
+    prevApplied = rounded;
+
+    posterEl.style.setProperty("--poster-band-height", `${rounded}px`);
+    posterEl.dataset.bandSynced = "true";
+    void posterEl.offsetHeight;
+  }
+}
+
+function syncPosterLayoutMetrics() {
+  syncPosterHeaderFooterBandHeight();
+  syncPosterPreviewSlotSize();
+}
+
+// =====================
+// APERÇU : taille du slot = boîte affichée du stage (getBoundingClientRect, post-transform)
+// =====================
+function syncPosterPreviewSlotSize() {
+  const stage = document.querySelector(".poster-preview-stage");
+  const slot = posterPreviewScaleSlot;
+  if (!stage || !slot || posterWorkspace.style.display === "none") return;
+
+  /* Taille *affichée* après transform (évite la hauteur « layout » trop grande et la zone grise) */
+  const rect = stage.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height;
+  if (w < 1 || h < 1) return;
+
+  slot.style.width = `${Math.round(w * 100) / 100}px`;
+  slot.style.height = `${Math.round(h * 100) / 100}px`;
+}
+
+function setupPosterPreviewLayoutSync() {
+  const posterEl = document.getElementById("posterContainer");
+  if (!posterEl || typeof ResizeObserver === "undefined") return;
+
+  const ro = new ResizeObserver(() => {
+    requestAnimationFrame(syncPosterLayoutMetrics);
+  });
+  ro.observe(posterEl);
+
+  window.addEventListener("resize", () => {
+    requestAnimationFrame(syncPosterLayoutMetrics);
+  });
+}
+
+// =====================
+// POSTER LOUPE (clone + zoom local)
+// =====================
+let magnifierCloneTimer = 0;
+
+function stripIdsFromElement(root) {
+  root.removeAttribute("id");
+  root.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+}
+
+function refreshPosterMagnifierClone() {
+  const inner = posterMagnifier?.querySelector(".poster-magnifier-inner");
+  const posterEl = document.getElementById("posterContainer");
+  if (!inner || !posterEl || posterWorkspace.style.display === "none") return;
+  if (posterEl.style.display === "none") return;
+  if (posterPreviewViewport?.dataset.posterLayout !== "100") {
+    inner.innerHTML = "";
+    return;
+  }
+
+  inner.innerHTML = "";
+  const clone = posterEl.cloneNode(true);
+  stripIdsFromElement(clone);
+  clone.classList.add("poster-magnifier-clone");
+  inner.appendChild(clone);
+
+  const w = posterEl.offsetWidth;
+  const h = posterEl.offsetHeight;
+  clone.style.width = `${w}px`;
+  clone.style.height = `${h}px`;
+}
+
+function scheduleMagnifierCloneRefresh() {
+  clearTimeout(magnifierCloneTimer);
+  if (posterPreviewViewport?.dataset.posterLayout !== "100") {
+    const inner = posterMagnifier?.querySelector(".poster-magnifier-inner");
+    if (inner) inner.innerHTML = "";
+    if (posterMagnifier) {
+      posterMagnifier.hidden = true;
+      posterMagnifier.setAttribute("aria-hidden", "true");
+    }
+    requestAnimationFrame(syncPosterLayoutMetrics);
+    return;
+  }
+  magnifierCloneTimer = setTimeout(() => {
+    refreshPosterMagnifierClone();
+    requestAnimationFrame(syncPosterLayoutMetrics);
+  }, 500);
+}
+
+function readMagnifierLensSize() {
+  if (!posterPreviewViewport) return 132;
+  const raw = getComputedStyle(posterPreviewViewport).getPropertyValue(
+    "--poster-magnifier-size"
+  );
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : 132;
+}
+
+function readMagnifierZoom() {
+  if (!posterPreviewViewport) return 2.25;
+  const raw = getComputedStyle(posterPreviewViewport).getPropertyValue(
+    "--poster-magnifier-zoom"
+  );
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : 2.25;
+}
+
+function setupPosterMagnifier() {
+  if (!posterPreviewViewport || !posterMagnifier) return;
+
+  posterPreviewViewport.addEventListener("mousemove", (e) => {
+    if (posterWorkspace.style.display === "none") return;
+    if (posterPreviewViewport.dataset.posterLayout !== "100") {
+      posterMagnifier.hidden = true;
+      posterMagnifier.setAttribute("aria-hidden", "true");
+      return;
+    }
+
+    const posterEl = document.getElementById("posterContainer");
+    const clone = posterMagnifier.querySelector(".poster-magnifier-clone");
+    if (!posterEl || posterEl.style.display === "none" || !clone) return;
+
+    const pr = posterEl.getBoundingClientRect();
+    if (
+      e.clientX < pr.left ||
+      e.clientX > pr.right ||
+      e.clientY < pr.top ||
+      e.clientY > pr.bottom
+    ) {
+      posterMagnifier.hidden = true;
+      posterMagnifier.setAttribute("aria-hidden", "true");
+      return;
+    }
+
+    const L = readMagnifierLensSize();
+    const Z = readMagnifierZoom();
+    const vr = posterPreviewViewport.getBoundingClientRect();
+
+    let vx = e.clientX - vr.left;
+    let vy = e.clientY - vr.top;
+    let left = vx - L / 2;
+    let top = vy - L / 2;
+    const maxL = Math.max(0, posterPreviewViewport.clientWidth - L);
+    const maxT = Math.max(0, posterPreviewViewport.clientHeight - L);
+    left = Math.min(Math.max(0, left), maxL);
+    top = Math.min(Math.max(0, top), maxT);
+
+    posterMagnifier.style.left = `${left}px`;
+    posterMagnifier.style.top = `${top}px`;
+    posterMagnifier.hidden = false;
+    posterMagnifier.setAttribute("aria-hidden", "false");
+
+    const px = ((e.clientX - pr.left) / pr.width) * posterEl.offsetWidth;
+    const py = ((e.clientY - pr.top) / pr.height) * posterEl.offsetHeight;
+    const tx = L / 2 - px * Z;
+    const ty = L / 2 - py * Z;
+    clone.style.transform = `translate(${tx}px, ${ty}px) scale(${Z})`;
+  });
+
+  posterPreviewViewport.addEventListener("mouseleave", () => {
+    posterMagnifier.hidden = true;
+    posterMagnifier.setAttribute("aria-hidden", "true");
+  });
+
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(scheduleMagnifierCloneRefresh, 200);
   });
 }
 
@@ -1116,9 +759,9 @@ downloadBtn.addEventListener("click", async () => {
 
   try {
     const canvas = await html2canvas(poster, {
-      scale: 3,
+      scale: 2,
       useCORS: true,
-      backgroundColor: "#000",
+      backgroundColor: "#f2f2f2",
       logging: false,
       imageTimeout: 15000,
     });
@@ -1129,9 +772,9 @@ downloadBtn.addEventListener("click", async () => {
 
     try {
       const fallbackCanvas = await html2canvas(poster, {
-        scale: 2,
+        scale: 1.5,
         useCORS: true,
-        backgroundColor: "#000",
+        backgroundColor: "#f2f2f2",
         logging: false,
         imageTimeout: 20000,
       });
@@ -1149,8 +792,9 @@ downloadBtn.addEventListener("click", async () => {
 // =====================
 shareBtn.addEventListener("click", async () => {
   const canvas = await html2canvas(poster, {
-    scale: 3,
+    scale: 2,
     useCORS: true,
+    backgroundColor: "#f2f2f2",
   });
 
   const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
@@ -1164,7 +808,7 @@ shareBtn.addEventListener("click", async () => {
         files: [file],
       });
       return;
-    } catch (e) {}
+    } catch (e) { }
   }
 
   const url = URL.createObjectURL(blob);
@@ -1190,10 +834,12 @@ function bindPosterEditor() {
 
   const updateTitle = () => {
     renderCurrentEditorValues();
+    scheduleMagnifierCloneRefresh();
   };
 
   const updateSubtitle = () => {
     renderCurrentEditorValues();
+    scheduleMagnifierCloneRefresh();
   };
 
   titleEditorInput.addEventListener("input", updateTitle);
@@ -1203,6 +849,7 @@ function bindPosterEditor() {
     titleEditorInput.value = DEFAULT_TITLE;
     subtitleEditorInput.value = DEFAULT_SUBTITLE;
     renderCurrentEditorValues();
+    scheduleMagnifierCloneRefresh();
   });
 
   posterCountSelect.addEventListener("change", () => {
@@ -1213,4 +860,6 @@ function bindPosterEditor() {
 }
 
 bindPosterEditor();
+setupPosterPreviewLayoutSync();
+setupPosterMagnifier();
 

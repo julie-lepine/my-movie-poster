@@ -10,6 +10,7 @@
   --border-soft: rgba(16, 24, 40, 0.12);
   --accent: #1ca8e3;
   --accent-2: #2bc0f5;
+  --accent-less-opacity: #2bbff5d8;
   --btn-neutral: #f8fbff;
 }
 
@@ -255,11 +256,12 @@ body {
 .loading {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.95);
+  background: var(--accent-less-opacity);
+  color: var(--text-main);
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 20px;
+  font-size: 40px;
   z-index: 999;
 }
 
@@ -272,7 +274,7 @@ body {
 ======================= */
 
 /* caché par défaut */
-#posterContainer,
+#posterContainer.poster-sheet,
 #posterWorkspace,
 #downloadPoster,
 #sharePoster {
@@ -284,40 +286,174 @@ body {
    POSTER WORKSPACE
 ======================= */
 #posterWorkspace {
-  width: min(96vw, 1280px);
+  /* Largeur = contenu (aperçu + panneau), pas toute la page */
+  width: fit-content;
+  max-width: min(96vw, 1400px);
   margin: 20px auto;
   display: flex;
   align-items: flex-start;
+  justify-content: center;
   gap: 20px;
   padding: 0 20px;
+  min-width: 0;
 }
 
 /* =======================
-   POSTER WRAPPER
+   A2 → affichage réduit + loupe (JS)
 ======================= */
-#posterContainer {
+.poster-preview-viewport {
+  --poster-preview-scale: 0.5;
+  --poster-magnifier-zoom: 1.75;
+  --poster-magnifier-size: 264px;
   flex: 0 0 auto;
-  width: auto;
-  height: min(88vh, 980px);
-  aspect-ratio: 210 / 297;
-  max-width: min(70vw, 760px);
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  /* Colle au slot (pas de bande grise sous le clip) */
+  width: fit-content;
+  max-width: min(calc(420mm * var(--poster-preview-scale)), calc(100vw - 48px), 100%);
+  height: fit-content;
+  min-width: 0;
+  border-radius: 6px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: #e8eaef;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
 
-  margin: 0 auto;
+/* 100 films : loupe + scroll si le poster dépasse l’écran */
+.poster-preview-viewport[data-poster-layout="100"] {
+  max-height: min(92vh, calc(100vw - 32px));
+  overflow: auto;
+  cursor: crosshair;
+}
+
+/* 25 / 48 : tout l’aperçu visible (pas de max-height / scroll), échelle un peu plus grande */
+.poster-preview-viewport[data-poster-layout="25"],
+.poster-preview-viewport[data-poster-layout="48"] {
+  max-height: none;
+  overflow: visible;
+  cursor: default;
+}
+
+.poster-preview-viewport[data-poster-layout="25"] {
+  --poster-preview-scale: 0.62;
+}
+
+.poster-preview-viewport[data-poster-layout="48"] {
+  --poster-preview-scale: 0.54;
+}
+
+.poster-preview-clip {
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 5px;
+  line-height: 0;
+  display: block;
+}
+
+/* Réserve exactement la place visuelle du stage (transform: scale ne réduit pas le layout du stage) */
+.poster-preview-scale-slot {
+  display: block;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.poster-preview-stage {
+  width: 420mm;
+  min-height: 0;
+  height: auto;
+  min-width: 0;
+  flex-shrink: 0;
+  margin: 0;
+  transform: scale(var(--poster-preview-scale));
+  transform-origin: top left;
+}
+
+.poster-magnifier {
+  position: absolute;
+  width: var(--poster-magnifier-size);
+  height: var(--poster-magnifier-size);
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 0 0 1px rgba(17, 24, 39, 0.2),
+    0 12px 28px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 30;
+  overflow: hidden;
+  background: #f2f2f2;
+}
+
+.poster-magnifier[hidden] {
+  display: none !important;
+}
+
+.poster-magnifier-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.poster-magnifier-clone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poster-preview-viewport {
+    --poster-magnifier-zoom: 1.35;
+  }
+}
+
+/* =======================
+   POSTER (canevas logique A2)
+======================= */
+.poster-sheet {
+  box-sizing: border-box;
+  width: 100%;
+  /* Hauteur = contenu ; A2 mini uniquement en mode 48 rempli + à l’impression */
+  min-height: 0;
+  height: auto;
+  max-width: none;
+  container-type: inline-size;
+  container-name: poster;
+
+  margin: 0;
   padding: 24px;
 
   display: grid;
 
-  /* 1 ligne header + reste films */
-  grid-template-rows: auto 1fr;
+  /* Header + grille + pied logo */
+  grid-template-rows: auto auto auto;
 
   gap: 10px;
 
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   background: #f2f2f2;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 4px;
   box-shadow: 0 28px 48px rgba(0, 0, 0, 0.3);
+}
+
+/* 48 films (6×8) : la grille occupe tout l’espace entre header et pied sur la feuille A2 */
+.poster-sheet.poster-sheet--fill-movie-grid {
+  grid-template-rows: auto 1fr auto;
+  min-height: 594mm;
 }
 
 /* overlay */
@@ -348,35 +484,146 @@ body {
 }
 
 /* contenu au-dessus overlay */
-#posterContainer > * {
+.poster-sheet > * {
   position: relative;
   z-index: 2;
+}
+
+.poster-sheet > .poster-header {
+  z-index: 3;
+}
+
+/* Pied poster (logo) */
+.poster-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 12px 8px;
+  margin: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.02), transparent);
+  min-height: min-content;
+}
+
+.poster-footer-logo {
+  display: block;
+  height: auto;
+  width: auto;
+  max-width: min(450px, 55cqi);
+  object-fit: contain;
+  opacity: 0.95;
+}
+
+/* Hauteur header / footer = plus grande .poster-film (mesure JS, --poster-band-height) */
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header,
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-footer {
+  height: var(--poster-band-height);
+  min-height: var(--poster-band-height);
+  max-height: var(--poster-band-height);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  overflow: hidden;
+  justify-content: center;
+}
+
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header {
+  container-type: size;
+  container-name: poster-hdr;
+  padding-top: 0;
+  padding-block: 2px;
+  padding-inline: 6px;
+  gap: 2px;
+  align-items: stretch;
+}
+
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-footer {
+  container-type: size;
+  container-name: poster-ftr;
+  padding-block: 2px;
+  padding-inline: 8px;
+}
+
+/* Titre / sous-titre : partagent la hauteur du header, typo pilotée par cqh + cqi */
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-title,
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-subtitle {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-title {
+  /* cqh = % de la hauteur du header (≈ moitié de bande par ligne de texte) */
+  font-size: clamp(8px, min(22cqh, 14cqi), 120px);
+  line-height: 1.08;
+  font-weight: 800;
+}
+
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-subtitle {
+  font-size: clamp(7px, min(17cqh, 11cqi), 96px);
+  line-height: 1.08;
+  font-weight: 700;
+}
+
+/* Logo : s’adapte au pied (ne dépasse pas la boîte du footer) */
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-footer-logo {
+  display: block;
+  width: auto;
+  height: auto;
+  max-height: 100%;
+  max-width: 100%;
+  min-height: 0;
+  min-width: 0;
+  object-fit: contain;
+  object-position: center;
 }
 
 /* =======================
    HEADER FIXE HAUTEUR
 ======================= */
 .poster-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45em;
   text-align: center;
   color: #25272d;
   padding-top: 8px;
+  min-width: 0;
 }
 
-/* IMPORTANT : bloc header séparé */
-.poster-title {
-  font-size: clamp(22px, 2.8vw, 42px);
+/* Typo du header : cqi = relatif au poster, tailles plus lisibles */
+.poster-sheet .poster-title {
+  font-size: clamp(20px, 8cqi, 44px);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin: 0;
+  line-height: 1.18;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
-.poster-subtitle {
-  font-size: clamp(18px, 2vw, 34px);
+.poster-sheet .poster-subtitle {
+  font-size: clamp(15px, 5cqi, 30px);
   font-weight: 700;
   opacity: 1;
-  margin-top: 2px;
+  margin: 0;
+  line-height: 1.32;
   text-transform: lowercase;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .poster-editor {
@@ -433,10 +680,71 @@ body {
 .poster-grid {
   display: grid;
   grid-template-columns: repeat(var(--poster-cols, 10), minmax(0, 1fr));
-  grid-auto-rows: minmax(0, 1fr);
+  /* Hauteur de ligne = plus grande carte de la ligne (ratios d’image respectés, pas de hauteur forcée identique) */
+  grid-auto-rows: auto;
   gap: var(--poster-gap, 7px);
+  height: auto;
+  min-height: 0;
+  align-content: start;
+  z-index: 2;
+}
+
+/* 48 films : 6×8, inter-colonnes marquées, lignes en 1fr pour agrandir les vignettes */
+.poster-grid[data-layout="48"] {
   height: 100%;
   min-height: 0;
+  grid-auto-rows: minmax(0, 1fr);
+  align-content: stretch;
+  gap: 10px 16px;
+}
+
+.poster-grid[data-layout="48"] .poster-film {
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: stretch;
+  align-self: stretch;
+  min-height: 0;
+  gap: 4px;
+}
+
+.poster-grid[data-layout="48"] .poster-film > img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  object-position: center center;
+}
+
+/* Dernière ligne incomplète (ex. 100 films, 9 col) : flex pour répartir l’espace */
+.poster-grid-tail {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-evenly;
+  align-items: stretch;
+  gap: var(--poster-gap, 11px);
+  min-height: 0;
+}
+
+.poster-grid-tail .poster-film {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Une seule vignette sur la dernière ligne : largeur ≈ 1 colonne, centrée */
+.poster-grid-tail .poster-film:only-child {
+  flex: 0 0 calc(100% / var(--poster-cols, 8));
+  max-width: calc(100% / var(--poster-cols, 8));
+}
+
+/* Grille 100 : air sous les affiches */
+.poster-grid[data-layout="100"] .poster-film {
+  gap: 4px;
+}
+
+.poster-grid[data-layout="100"] .poster-film .film-info {
+  gap: 4px;
+  padding: 0 2px;
 }
 
 /* =======================
@@ -444,32 +752,111 @@ body {
 ======================= */
 .poster-film {
   display: grid;
-  grid-template-rows: 1fr auto;
+  /* Image : hauteur intrinsèque (ratio d’origine à largeur colonne) ; pas de carré imposé */
+  grid-template-rows: auto auto;
+  align-items: start;
   gap: 3px;
   width: 100%;
-  height: 100%;
+  min-height: 0;
 }
 
 /* IMAGE */
-.poster-film img {
+.poster-film > img {
   width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
+  height: auto;
+  max-width: 100%;
+  min-height: 0;
+  object-fit: contain;
+  object-position: center top;
   display: block;
   border-radius: 2px;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
-/* TITLE SUR IMAGE */
-.poster-film .film-title {
-  padding: 0 1px;
-  font-size: 8px;
-  line-height: 1.15;
+/* INFO ROW (circle + titre + année) */
+.poster-film .film-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  padding: 0 1px 2px;
+  min-height: min-content;
+  flex-shrink: 0;
+  overflow: hidden;
   text-align: center;
+}
+
+.poster-film .film-circle {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  object-fit: contain;
+  margin-bottom: 2px;
+}
+
+/* TITLE — centré sous la vignette (25 / 48 / 100 ci-dessous) */
+.poster-film .film-title {
+  font-size: 10px;
+  line-height: 1.2;
   color: #31343c;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
+}
+
+/* YEAR */
+.poster-film .film-year {
+  font-size: 9px;
+  line-height: 1.2;
+  color: #6b7280;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+/* 25 films : plus d’espace → typo plus grande */
+.poster-grid[data-layout="25"] .poster-film .film-title {
+  font-size: 30px;
+}
+
+.poster-grid[data-layout="25"] .poster-film .film-year {
+  font-size: 20px;
+}
+
+.poster-grid[data-layout="25"] .poster-film .film-circle {
+  width: 30px;
+  height: 30px;
+}
+
+/* 48 films */
+.poster-grid[data-layout="48"] .poster-film .film-title {
+  font-size: 20px;
+}
+
+.poster-grid[data-layout="48"] .poster-film .film-year {
+  font-size: 10px;
+}
+
+.poster-grid[data-layout="48"] .poster-film .film-circle {
+  width: 20px;
+  height: 20px;
+}
+
+/* 100 films (8×13) */
+.poster-grid[data-layout="100"] .poster-film .film-title {
+  font-size: 11px;
+}
+
+.poster-grid[data-layout="100"] .poster-film .film-year {
+  font-size: 10px;
+}
+
+.poster-grid[data-layout="100"] .poster-film .film-circle {
+  width: 15px;
+  height: 15px;
 }
 
 /* =======================
@@ -611,12 +998,24 @@ button:hover {
     flex-direction: column;
   }
 
-  #posterContainer {
-    width: min(100%, 560px);
-    height: auto;
-    max-width: 100%;
+  .poster-preview-viewport {
+    --poster-preview-scale: 0.38;
+    --poster-magnifier-size: 104px;
+    width: fit-content;
+    max-width: min(calc(420mm * var(--poster-preview-scale)), calc(100vw - 24px), 100%);
+    margin-inline: auto;
+  }
+
+  .poster-preview-viewport[data-poster-layout="25"] {
+    --poster-preview-scale: 0.5;
     max-height: none;
-    aspect-ratio: 210 / 297;
+    overflow: visible;
+  }
+
+  .poster-preview-viewport[data-poster-layout="48"] {
+    --poster-preview-scale: 0.44;
+    max-height: none;
+    overflow: visible;
   }
 
   .poster-editor {
@@ -645,6 +1044,24 @@ button:hover {
   }
 }
 
+@media (max-width: 420px) {
+  .poster-preview-viewport {
+    --poster-preview-scale: 0.26;
+  }
+
+  .poster-preview-viewport[data-poster-layout="25"] {
+    --poster-preview-scale: 0.34;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .poster-preview-viewport[data-poster-layout="48"] {
+    --poster-preview-scale: 0.3;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
 @media (max-width: 600px) {
   #quiz {
     min-height: calc(100vh - 60px);
@@ -661,5 +1078,75 @@ button:hover {
 
   .quiz-nav button {
     width: 100%;
+  }
+}
+
+@media print {
+  @page {
+    size: A2 portrait;
+    margin: 8mm;
+  }
+
+  #posterWorkspace {
+    width: 100%;
+    max-width: none;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .poster-preview-viewport {
+    width: auto;
+    max-width: none;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .poster-preview-scale-slot {
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .poster-preview-clip {
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .poster-preview-stage {
+    transform: none;
+    width: 420mm;
+    min-height: 594mm;
+    height: auto;
+    margin: 0;
+  }
+
+  .poster-magnifier {
+    display: none !important;
+  }
+
+  #posterContainer.poster-sheet {
+    max-width: none;
+    width: 100%;
+    min-height: 594mm;
+    height: auto;
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+
+  .poster-editor,
+  .site-header,
+  .site-services,
+  .site-footer,
+  #quiz,
+  .progress-bar,
+  #resultats,
+  #loadingScreen {
+    display: none !important;
   }
 }

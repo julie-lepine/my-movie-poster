@@ -50,14 +50,30 @@
 
 <!-- POSTER + EDITOR -->
 <div id="posterWorkspace">
-  <div id="posterContainer">
+  <!-- A2 logique, affichage réduit (scale) + loupe au survol -->
+  <div id="posterPreviewViewport" class="poster-preview-viewport" data-poster-layout="100">
+    <div class="poster-preview-clip">
+      <div id="posterPreviewScaleSlot" class="poster-preview-scale-slot">
+        <div class="poster-preview-stage">
+          <div id="posterContainer" class="poster-sheet">
 
-    <div class="poster-header">
-      <div class="poster-title">Ton univers cinéma</div>
-      <div class="poster-subtitle">Création personnalisée</div>
+            <div class="poster-header">
+              <div class="poster-title">Ton univers cinéma</div>
+              <div class="poster-subtitle">Création personnalisée</div>
+            </div>
+
+            <div class="poster-grid" id="posterGrid"></div>
+
+            <footer class="poster-footer" aria-label="Marque">
+              <img class="poster-footer-logo" src="./assets/site/logo.jpg" alt="My Movies Poster" width="140" height="48" />
+            </footer>
+          </div>
+        </div>
+      </div>
     </div>
-
-    <div class="poster-grid" id="posterGrid"></div>
+    <div id="posterMagnifier" class="poster-magnifier" hidden aria-hidden="true">
+      <div class="poster-magnifier-inner"></div>
+    </div>
   </div>
 
   <div id="posterEditor" class="poster-editor">
@@ -121,6 +137,8 @@
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="quizData.js"></script>
+<script src="filmsDB.js"></script>
 <script src="app.js"></script>
 
 </body>
