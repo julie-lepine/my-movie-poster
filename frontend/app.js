@@ -7,6 +7,36 @@ let currentQuestionIndex = 0;
 
 const DEFAULT_TITLE = "Ton univers cinéma";
 const DEFAULT_SUBTITLE = "Création personnalisée";
+const DEFAULT_TITLE_COLOR = "#25272d";
+const DEFAULT_SUBTITLE_COLOR = "#3d4152";
+const DEFAULT_TITLE_FONT_SIZE_PX = 26;
+const DEFAULT_SUBTITLE_FONT_SIZE_PX = 16;
+
+const titleTextFormat = {
+  bold: false,
+  italic: false,
+  underline: false,
+  strike: false,
+};
+const subtitleTextFormat = {
+  bold: false,
+  italic: false,
+  underline: false,
+  strike: false,
+};
+
+const TITLE_FMT_BTN = {
+  bold: "titleFmtBold",
+  italic: "titleFmtItalic",
+  underline: "titleFmtUnderline",
+  strike: "titleFmtStrike",
+};
+const SUBTITLE_FMT_BTN = {
+  bold: "subtitleFmtBold",
+  italic: "subtitleFmtItalic",
+  underline: "subtitleFmtUnderline",
+  strike: "subtitleFmtStrike",
+};
 
 // =====================
 // DOM
@@ -22,11 +52,17 @@ const restartQuizBtn = document.getElementById("restartQuizBtn");
 const results = document.getElementById("resultats");
 const poster = document.getElementById("posterContainer");
 const posterWorkspace = document.getElementById("posterWorkspace");
-const downloadBtn = document.getElementById("downloadPoster");
-const shareBtn = document.getElementById("sharePoster");
 const loading = document.getElementById("loadingScreen");
 const titleEditorInput = document.getElementById("titleEditorInput");
 const subtitleEditorInput = document.getElementById("subtitleEditorInput");
+const titleFontSelect = document.getElementById("titleFontSelect");
+const subtitleFontSelect = document.getElementById("subtitleFontSelect");
+const titleColorInput = document.getElementById("titleColorInput");
+const subtitleColorInput = document.getElementById("subtitleColorInput");
+const titleFontSizeInput = document.getElementById("titleFontSizeInput");
+const subtitleFontSizeInput = document.getElementById("subtitleFontSizeInput");
+const titleFontSizeValue = document.getElementById("titleFontSizeValue");
+const subtitleFontSizeValue = document.getElementById("subtitleFontSizeValue");
 const resetPosterTextBtn = document.getElementById("resetPosterText");
 const posterCountSelect = document.getElementById("posterCountSelect");
 const posterPreviewViewport = document.getElementById("posterPreviewViewport");
@@ -127,8 +163,6 @@ function runMappingSanityCheck() {
 function initUI() {
   runMappingSanityCheck();
   posterWorkspace.style.display = "none";
-  downloadBtn.style.display = "none";
-  shareBtn.style.display = "none";
   results.style.display = "none";
   renderCurrentQuestion(false);
   updateProgress();
@@ -350,8 +384,6 @@ function runFinal() {
     // show poster container + editor panel
     posterWorkspace.style.display = "flex";
     poster.style.display = "grid";
-    downloadBtn.style.display = "inline-block";
-    shareBtn.style.display = "inline-block";
 
     generatePoster(currentFilms);
 
@@ -426,6 +458,8 @@ function generatePoster(films) {
   header.appendChild(subtitle);
 
   poster.insertBefore(header, grid);
+  applyPosterTypographyFromEditor();
+  applyTitleSubtitleFormatClasses();
 
   const filmsToShow = films.slice(0, safeCount);
   const remainder = safeCount % cols;
@@ -476,13 +510,11 @@ function generatePoster(films) {
   requestAnimationFrame(() => {
     requestAnimationFrame(syncPosterLayoutMetrics);
   });
+  /* Images en cache : pas d’événement load → re-sync quand même après décodage */
   grid.querySelectorAll(".poster-film > img").forEach((img) => {
-    if (img.complete) return;
-    img.addEventListener(
-      "load",
-      () => requestAnimationFrame(syncPosterLayoutMetrics),
-      { passive: true }
-    );
+    const bump = () => requestAnimationFrame(syncPosterLayoutMetrics);
+    if (img.complete) bump();
+    else img.addEventListener("load", bump, { passive: true });
   });
 
   const footerLogo = poster.querySelector(".poster-footer-logo");
@@ -502,13 +534,27 @@ function collectPosterFilmCards(grid) {
   ];
 }
 
+/**
+ * Cartes servant au calcul du bandeau header/footer.
+ * En 100 films, la dernière ligne (tail flex) est plus large → vignettes souvent plus hautes que la grille 8 col :
+ * on ne mesure que les `.poster-film` directs (même hauteur qu’une « vraie » cellule du poster).
+ */
+function collectPosterFilmCardsForBandHeight(grid) {
+  const layout = grid.dataset.layout;
+  const main = [...grid.querySelectorAll(":scope > .poster-film")];
+  if (layout === "100" && main.length > 0) {
+    return main;
+  }
+  return collectPosterFilmCards(grid);
+}
+
 /** Header + footer = hauteur de la plus grande carte (25 / 48 / 100), avec convergence si la grille 1fr réagit. */
 function syncPosterHeaderFooterBandHeight() {
   const posterEl = document.getElementById("posterContainer");
   const grid = document.getElementById("posterGrid");
   if (!posterEl || !grid || posterWorkspace.style.display === "none") return;
 
-  const cards = collectPosterFilmCards(grid);
+  const cards = collectPosterFilmCardsForBandHeight(grid);
   if (!cards.length) {
     posterEl.style.removeProperty("--poster-band-height");
     posterEl.removeAttribute("data-band-synced");
@@ -518,7 +564,7 @@ function syncPosterHeaderFooterBandHeight() {
   let prevApplied = -2;
   for (let step = 0; step < 12; step++) {
     let maxH = 0;
-    for (const el of collectPosterFilmCards(grid)) {
+    for (const el of collectPosterFilmCardsForBandHeight(grid)) {
       maxH = Math.max(maxH, el.offsetHeight);
     }
     if (maxH < 8) return;
@@ -727,96 +773,76 @@ function hideLoading() {
   loading.classList.add("hidden");
 }
 
-// =====================
-// DOWNLOAD (SAFE)
-// =====================
-function canvasToBlob(canvas) {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error("Conversion canvas -> blob impossible"));
-        return;
-      }
-      resolve(blob);
-    }, "image/png");
-  });
-}
-
-function downloadBlob(blob, fileName) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.download = fileName;
-  link.href = url;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-downloadBtn.addEventListener("click", async () => {
-  if (typeof html2canvas !== "function") {
-    console.error("html2canvas indisponible : vérifie le chargement du script CDN.");
-    return;
-  }
-
-  try {
-    const canvas = await html2canvas(poster, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#f2f2f2",
-      logging: false,
-      imageTimeout: 15000,
-    });
-    const blob = await canvasToBlob(canvas);
-    downloadBlob(blob, "cinema-wrapped.png");
-  } catch (primaryError) {
-    console.warn("Capture standard échouée, tentative fallback...", primaryError);
-
-    try {
-      const fallbackCanvas = await html2canvas(poster, {
-        scale: 1.5,
-        useCORS: true,
-        backgroundColor: "#f2f2f2",
-        logging: false,
-        imageTimeout: 20000,
-      });
-      const fallbackBlob = await canvasToBlob(fallbackCanvas);
-      downloadBlob(fallbackBlob, "cinema-wrapped.png");
-    } catch (fallbackError) {
-      console.error("Téléchargement impossible:", fallbackError);
-      alert("Impossible de télécharger le poster. Vérifie que les images sont bien accessibles, puis réessaie.");
+function syncPosterFormatToolbar() {
+  for (const key of ["bold", "italic", "underline", "strike"]) {
+    const tBtn = document.getElementById(TITLE_FMT_BTN[key]);
+    if (tBtn) {
+      const on = titleTextFormat[key];
+      tBtn.setAttribute("aria-pressed", String(on));
+      tBtn.classList.toggle("is-active", on);
+    }
+    const sBtn = document.getElementById(SUBTITLE_FMT_BTN[key]);
+    if (sBtn) {
+      const on = subtitleTextFormat[key];
+      sBtn.setAttribute("aria-pressed", String(on));
+      sBtn.classList.toggle("is-active", on);
     }
   }
-});
+}
 
-// =====================
-// SHARE (SAFE FALLBACK)
-// =====================
-shareBtn.addEventListener("click", async () => {
-  const canvas = await html2canvas(poster, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#f2f2f2",
-  });
-
-  const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
-
-  const file = new File([blob], "poster.png", { type: "image/png" });
-
-  if (navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({
-        title: "Mon cinéma",
-        files: [file],
-      });
-      return;
-    } catch (e) { }
+function applyTitleSubtitleFormatClasses() {
+  const titleEl = document.getElementById("posterTitle");
+  const subEl = document.getElementById("posterSubtitle");
+  if (titleEl) {
+    titleEl.classList.toggle("is-editor-bold", titleTextFormat.bold);
+    titleEl.classList.toggle("is-editor-italic", titleTextFormat.italic);
+    titleEl.classList.toggle("is-editor-underline", titleTextFormat.underline);
+    titleEl.classList.toggle("is-editor-strike", titleTextFormat.strike);
   }
+  if (subEl) {
+    subEl.classList.toggle("is-editor-bold", subtitleTextFormat.bold);
+    subEl.classList.toggle("is-editor-italic", subtitleTextFormat.italic);
+    subEl.classList.toggle("is-editor-underline", subtitleTextFormat.underline);
+    subEl.classList.toggle("is-editor-strike", subtitleTextFormat.strike);
+  }
+}
 
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "cinema-wrapped.png";
-  a.click();
-});
+function syncPosterFontSizeLabels() {
+  if (titleFontSizeValue && titleFontSizeInput) {
+    titleFontSizeValue.textContent = titleFontSizeInput.value;
+  }
+  if (subtitleFontSizeValue && subtitleFontSizeInput) {
+    subtitleFontSizeValue.textContent = subtitleFontSizeInput.value;
+  }
+}
+
+function applyPosterTypographyFromEditor() {
+  const el = document.getElementById("posterContainer");
+  if (!el) return;
+
+  const tf = titleFontSelect?.value?.trim();
+  const sf = subtitleFontSelect?.value?.trim();
+  const tc = titleColorInput?.value?.trim();
+  const sc = subtitleColorInput?.value?.trim();
+
+  if (tf) el.style.setProperty("--poster-title-font", tf);
+  if (sf) el.style.setProperty("--poster-subtitle-font", sf);
+  if (tc) el.style.setProperty("--poster-title-color", tc);
+  if (sc) el.style.setProperty("--poster-subtitle-color", sc);
+
+  const titlePx = parseInt(titleFontSizeInput?.value, 10);
+  const subPx = parseInt(subtitleFontSizeInput?.value, 10);
+  if (Number.isFinite(titlePx) && titlePx > 0) {
+    el.style.setProperty("--poster-title-font-size", `${titlePx}px`);
+  } else {
+    el.style.removeProperty("--poster-title-font-size");
+  }
+  if (Number.isFinite(subPx) && subPx > 0) {
+    el.style.setProperty("--poster-subtitle-font-size", `${subPx}px`);
+  } else {
+    el.style.removeProperty("--poster-subtitle-font-size");
+  }
+}
 
 function bindPosterEditor() {
   const renderCurrentEditorValues = () => {
@@ -830,26 +856,64 @@ function bindPosterEditor() {
       subtitleNode.textContent =
         subtitleEditorInput.value.trim() || DEFAULT_SUBTITLE;
     }
+    applyPosterTypographyFromEditor();
+    applyTitleSubtitleFormatClasses();
   };
 
-  const updateTitle = () => {
+  const bump = () => {
     renderCurrentEditorValues();
+    syncPosterFormatToolbar();
     scheduleMagnifierCloneRefresh();
   };
 
-  const updateSubtitle = () => {
-    renderCurrentEditorValues();
-    scheduleMagnifierCloneRefresh();
-  };
+  titleEditorInput.addEventListener("input", bump);
+  subtitleEditorInput.addEventListener("input", bump);
+  titleFontSelect?.addEventListener("change", bump);
+  subtitleFontSelect?.addEventListener("change", bump);
+  titleColorInput?.addEventListener("input", bump);
+  subtitleColorInput?.addEventListener("input", bump);
 
-  titleEditorInput.addEventListener("input", updateTitle);
-  subtitleEditorInput.addEventListener("input", updateSubtitle);
+  function onFontSizeInput() {
+    syncPosterFontSizeLabels();
+    applyPosterTypographyFromEditor();
+    scheduleMagnifierCloneRefresh();
+  }
+  titleFontSizeInput?.addEventListener("input", onFontSizeInput);
+  subtitleFontSizeInput?.addEventListener("input", onFontSizeInput);
+
+  function wireFmtBtn(btnId, key, scope) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const fmt = scope === "title" ? titleTextFormat : subtitleTextFormat;
+      fmt[key] = !fmt[key];
+      syncPosterFormatToolbar();
+      applyTitleSubtitleFormatClasses();
+      scheduleMagnifierCloneRefresh();
+    });
+  }
+  for (const key of ["bold", "italic", "underline", "strike"]) {
+    wireFmtBtn(TITLE_FMT_BTN[key], key, "title");
+    wireFmtBtn(SUBTITLE_FMT_BTN[key], key, "subtitle");
+  }
 
   resetPosterTextBtn.addEventListener("click", () => {
     titleEditorInput.value = DEFAULT_TITLE;
     subtitleEditorInput.value = DEFAULT_SUBTITLE;
-    renderCurrentEditorValues();
-    scheduleMagnifierCloneRefresh();
+    if (titleFontSelect) titleFontSelect.selectedIndex = 0;
+    if (subtitleFontSelect) subtitleFontSelect.selectedIndex = 0;
+    if (titleColorInput) titleColorInput.value = DEFAULT_TITLE_COLOR;
+    if (subtitleColorInput) subtitleColorInput.value = DEFAULT_SUBTITLE_COLOR;
+    if (titleFontSizeInput) titleFontSizeInput.value = String(DEFAULT_TITLE_FONT_SIZE_PX);
+    if (subtitleFontSizeInput) {
+      subtitleFontSizeInput.value = String(DEFAULT_SUBTITLE_FONT_SIZE_PX);
+    }
+    syncPosterFontSizeLabels();
+    for (const k of ["bold", "italic", "underline", "strike"]) {
+      titleTextFormat[k] = false;
+      subtitleTextFormat[k] = false;
+    }
+    bump();
   });
 
   posterCountSelect.addEventListener("change", () => {
@@ -857,6 +921,9 @@ function bindPosterEditor() {
       generatePoster(currentFilms);
     }
   });
+
+  syncPosterFormatToolbar();
+  syncPosterFontSizeLabels();
 }
 
 bindPosterEditor();

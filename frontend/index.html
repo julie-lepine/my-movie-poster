@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cinema Match</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;700&family=Oswald:wght@600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="style.css"/>
 </head>
 
@@ -79,10 +83,58 @@
   <div id="posterEditor" class="poster-editor">
     <h3>Personnaliser</h3>
     <label for="titleEditorInput">Titre</label>
-    <input id="titleEditorInput" type="text" value="Ton univers cinéma" />
+    <input id="titleEditorInput" type="text" value="Ton univers cinéma" autocomplete="off" spellcheck="false" />
+
+    <label for="titleFontSelect">Police du titre</label>
+    <select id="titleFontSelect">
+      <option value="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" selected>Système</option>
+      <option value="'Montserrat', system-ui, sans-serif">Montserrat</option>
+      <option value="'Playfair Display', Georgia, serif">Playfair Display</option>
+      <option value="'Bebas Neue', Impact, sans-serif">Bebas Neue</option>
+      <option value="'Oswald', 'Arial Narrow', sans-serif">Oswald</option>
+      <option value="Georgia, 'Times New Roman', serif">Georgia</option>
+    </select>
+
+    <label for="titleFontSizeInput">Taille du titre <span id="titleFontSizeValue">26</span> px</label>
+    <input id="titleFontSizeInput" class="poster-editor-range" type="range" min="12" max="64" value="26" step="1" />
+
+    <label for="titleColorInput">Couleur du titre</label>
+    <input id="titleColorInput" class="poster-editor-color" type="color" value="#25272d" />
+
+    <div class="poster-editor-toolbar" role="group" aria-label="Style du titre">
+      <span class="poster-editor-toolbar-label">Style du titre</span>
+      <button type="button" class="poster-editor-fmt-btn" id="titleFmtBold" aria-pressed="false" title="Gras">G</button>
+      <button type="button" class="poster-editor-fmt-btn" id="titleFmtItalic" aria-pressed="false" title="Italique">I</button>
+      <button type="button" class="poster-editor-fmt-btn" id="titleFmtUnderline" aria-pressed="false" title="Souligné">U</button>
+      <button type="button" class="poster-editor-fmt-btn" id="titleFmtStrike" aria-pressed="false" title="Barré">R</button>
+    </div>
 
     <label for="subtitleEditorInput">Sous-titre</label>
-    <input id="subtitleEditorInput" type="text" value="Création personnalisée" />
+    <input id="subtitleEditorInput" type="text" value="Création personnalisée" autocomplete="off" spellcheck="false" />
+
+    <label for="subtitleFontSelect">Police du sous-titre</label>
+    <select id="subtitleFontSelect">
+      <option value="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" selected>Système</option>
+      <option value="'Montserrat', system-ui, sans-serif">Montserrat</option>
+      <option value="'Playfair Display', Georgia, serif">Playfair Display</option>
+      <option value="'Bebas Neue', Impact, sans-serif">Bebas Neue</option>
+      <option value="'Oswald', 'Arial Narrow', sans-serif">Oswald</option>
+      <option value="Georgia, 'Times New Roman', serif">Georgia</option>
+    </select>
+
+    <label for="subtitleFontSizeInput">Taille du sous-titre <span id="subtitleFontSizeValue">16</span> px</label>
+    <input id="subtitleFontSizeInput" class="poster-editor-range" type="range" min="10" max="44" value="16" step="1" />
+
+    <label for="subtitleColorInput">Couleur du sous-titre</label>
+    <input id="subtitleColorInput" class="poster-editor-color" type="color" value="#3d4152" />
+
+    <div class="poster-editor-toolbar" role="group" aria-label="Style du sous-titre">
+      <span class="poster-editor-toolbar-label">Style du sous-titre</span>
+      <button type="button" class="poster-editor-fmt-btn" id="subtitleFmtBold" aria-pressed="false" title="Gras">G</button>
+      <button type="button" class="poster-editor-fmt-btn" id="subtitleFmtItalic" aria-pressed="false" title="Italique">I</button>
+      <button type="button" class="poster-editor-fmt-btn" id="subtitleFmtUnderline" aria-pressed="false" title="Souligné">U</button>
+      <button type="button" class="poster-editor-fmt-btn" id="subtitleFmtStrike" aria-pressed="false" title="Barré">R</button>
+    </div>
 
     <label for="posterCountSelect">Nombre d'images</label>
     <select id="posterCountSelect">
@@ -92,8 +144,6 @@
     </select>
 
     <button id="resetPosterText" type="button">Réinitialiser texte</button>
-    <button id="downloadPoster">Télécharger</button>
-    <button id="sharePoster" style="display:none;">Partager</button>
   </div>
 </div>
 
@@ -136,7 +186,6 @@
   </div>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="quizData.js"></script>
 <script src="filmsDB.js"></script>
 <script src="app.js"></script>
