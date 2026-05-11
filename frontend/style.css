@@ -296,6 +296,46 @@ body {
   min-width: 0;
 }
 
+/* Colonne : bouton Zoom au-dessus du panneau Personnaliser */
+.poster-side-stack {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+  min-width: min(28vw, 320px);
+}
+
+.poster-zoom-toggle {
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 12px;
+  border: 1px solid rgba(28, 168, 227, 0.35);
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.16s ease, filter 0.16s ease, opacity 0.2s ease;
+}
+
+.poster-zoom-toggle:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.poster-zoom-toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.25);
+}
+
+.poster-zoom-toggle.is-active {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
 /* =======================
    A2 → affichage réduit + loupe (JS)
 ======================= */
@@ -318,10 +358,14 @@ body {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
-/* 100 films : loupe + scroll si le poster dépasse l’écran */
+/* 100 films : loupe + scroll si le poster dépasse l’écran (curseur loupe seulement si Zoom activé) */
 .poster-preview-viewport[data-poster-layout="100"] {
   max-height: min(92vh, calc(100vw - 32px));
   overflow: auto;
+  cursor: default;
+}
+
+.poster-preview-viewport[data-poster-layout="100"].is-magnifier-active {
   cursor: crosshair;
 }
 
@@ -346,7 +390,11 @@ body {
   height: auto;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  /* Air pour fil + pinces (#posterContainer::before/::after), sans couper la déco */
+  overflow: visible;
+  padding-top: clamp(42px, 9cqi, 78px);
+  box-sizing: border-box;
+  background: #e8eaef;
   border-radius: 5px;
   line-height: 0;
   display: block;
@@ -358,7 +406,7 @@ body {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
   line-height: 0;
 }
 
@@ -464,31 +512,39 @@ body {
   min-height: 594mm;
 }
 
-/* overlay */
-#posterContainer::before {
-  content: "";
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  top: -10px;
-  left: 14%;
-  background: #2f3137;
-  border-radius: 4px;
-  z-index: 3;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.16);
-}
-
+/*
+ * Décoration « affiche suspendue » (fil + pince) — écran uniqué, masqué à l’impression.
+ * Gauche / droite : même ressource, miroir pour ::after.
+ */
+#posterContainer::before,
 #posterContainer::after {
   content: "";
   position: absolute;
-  width: 24px;
-  height: 24px;
-  top: -10px;
-  right: 14%;
-  background: #2f3137;
-  border-radius: 4px;
-  z-index: 3;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.16);
+  pointer-events: none;
+  /* Au-dessus du header pour que la mâchoire basse du SVG morde visiblement le bord du poster */
+  z-index: 4;
+  width: clamp(33px, 4.8cqi, 51px);
+  height: clamp(60px, 8.7cqi, 87px);
+  /* Bas de la pince un peu sous le bord haut du conteneur = effet « accroché » */
+  bottom: calc(100% - clamp(15px, 2.1cqi, 27px));
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: contain;
+  filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.22))
+    drop-shadow(0 2px 3px rgba(0, 0, 0, 0.18));
+}
+
+/* SVG : fil vertical + pince type bulldog + léger relief */
+#posterContainer::before {
+  left: clamp(10%, 11%, 14%);
+  transform: translateX(-50%);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 72' width='40' height='72'%3E%3Cdefs%3E%3ClinearGradient id='c' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23484d58'/%3E%3Cstop offset='45%25' stop-color='%2315181c'/%3E%3Cstop offset='100%25' stop-color='%232e323a'/%3E%3C/linearGradient%3E%3ClinearGradient id='w' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%239096a3'/%3E%3Cstop offset='100%25' stop-color='%23555a64'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='19' y='0' width='2.2' height='18' rx='1.1' fill='url(%23w)'/%3E%3Cpath fill='url(%23c)' stroke='%230d0e10' stroke-width='0.6' d='M8 22h24l2.2 6-2.2 32H8L5.8 28 8 22z'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.14' stroke-width='1' d='M11 25h18'/%3E%3Cellipse cx='20' cy='30' rx='7' ry='3.5' fill='%230a0b0d' opacity='0.35'/%3E%3Cpath fill='none' stroke='%23000000' stroke-opacity='0.25' stroke-width='0.8' d='M10 38h20M10 44h20'/%3E%3C/svg%3E");
+}
+
+#posterContainer::after {
+  right: clamp(10%, 11%, 14%);
+  transform: translateX(50%) scaleX(-1);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 72' width='40' height='72'%3E%3Cdefs%3E%3ClinearGradient id='c2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23484d58'/%3E%3Cstop offset='45%25' stop-color='%2315181c'/%3E%3Cstop offset='100%25' stop-color='%232e323a'/%3E%3C/linearGradient%3E%3ClinearGradient id='w2' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%239096a3'/%3E%3Cstop offset='100%25' stop-color='%23555a64'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='19' y='0' width='2.2' height='18' rx='1.1' fill='url(%23w2)'/%3E%3Cpath fill='url(%23c2)' stroke='%230d0e10' stroke-width='0.6' d='M8 22h24l2.2 6-2.2 32H8L5.8 28 8 22z'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.14' stroke-width='1' d='M11 25h18'/%3E%3Cellipse cx='20' cy='30' rx='7' ry='3.5' fill='%230a0b0d' opacity='0.35'/%3E%3Cpath fill='none' stroke='%23000000' stroke-opacity='0.25' stroke-width='0.8' d='M10 38h20M10 44h20'/%3E%3C/svg%3E");
 }
 
 /* contenu au-dessus overlay */
@@ -600,6 +656,37 @@ body {
   font-weight: 800;
 }
 
+/* Bandeau : spécificité > .poster-sheet … pour que G/I/U/R s’appliquent (overflow masquait le souligné) */
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-title.is-editor-italic,
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-subtitle.is-editor-italic {
+  font-style: italic;
+}
+
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-title.is-editor-underline {
+  padding-bottom: max(0.55em, 12px);
+  box-sizing: border-box;
+}
+
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-title.is-editor-underline:not(.is-editor-strike),
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-subtitle.is-editor-underline:not(.is-editor-strike) {
+  text-decoration: underline;
+  text-underline-offset: 0.1em;
+  overflow: visible;
+}
+
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-title.is-editor-strike:not(.is-editor-underline),
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-subtitle.is-editor-strike:not(.is-editor-underline) {
+  text-decoration: line-through;
+  overflow: visible;
+}
+
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-title.is-editor-underline.is-editor-strike,
+#posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-subtitle.is-editor-underline.is-editor-strike {
+  text-decoration: underline line-through;
+  text-underline-offset: 0.1em;
+  overflow: visible;
+}
+
 /* Logo : s’adapte au pied (ne dépasse pas la boîte du footer) */
 #posterContainer.poster-sheet[data-band-synced="true"] .poster-footer-logo {
   display: block;
@@ -625,6 +712,11 @@ body {
   color: #25272d;
   padding-top: 8px;
   min-width: 0;
+}
+
+/* Un peu d’air titre → sous-titre quand le titre est souligné */
+.poster-header:has(.poster-title.is-editor-underline) {
+  gap: 0.28em;
 }
 
 /* Typo du header : cqi = relatif au poster, tailles plus lisibles */
@@ -667,6 +759,11 @@ body {
 .poster-sheet .poster-title.is-editor-italic,
 .poster-sheet .poster-subtitle.is-editor-italic {
   font-style: italic;
+}
+
+.poster-sheet .poster-title.is-editor-underline {
+  padding-bottom: 0.5em;
+  box-sizing: border-box;
 }
 
 .poster-sheet .poster-title.is-editor-underline:not(.is-editor-strike),
@@ -1000,6 +1097,11 @@ button:hover {
   filter: brightness(1.05);
 }
 
+/* Annule la marge globale des <button> pour le toggle Zoom */
+#posterWorkspace .poster-zoom-toggle {
+  margin: 0;
+}
+
 
 .site-services {
   margin-top: 46px;
@@ -1135,6 +1237,11 @@ button:hover {
     overflow: visible;
   }
 
+  .poster-side-stack {
+    width: 100%;
+    min-width: 0;
+  }
+
   .poster-editor {
     width: 100%;
     min-width: 0;
@@ -1256,7 +1363,14 @@ button:hover {
     page-break-inside: avoid;
   }
 
+  #posterContainer.poster-sheet::before,
+  #posterContainer.poster-sheet::after {
+    content: none !important;
+    display: none !important;
+  }
+
   .poster-editor,
+  .poster-zoom-toggle,
   .site-header,
   .site-services,
   .site-footer,

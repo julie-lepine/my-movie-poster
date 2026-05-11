@@ -12,7 +12,7 @@ const quizData = [
       { value: "energetic", label: "Couleurs saturées" },
     ],
   },
-/* {
+{
     id: "ambiance",
     question: "Quelle ambiance te correspond le plus ?",
     options: [
@@ -70,7 +70,7 @@ const quizData = [
       { value: "vintage", label: "Rétro" },
       { value: "futuristic", label: "Modernes" },
     ],
-  },*/
+  },
 ];
 
 const optionImages = {
