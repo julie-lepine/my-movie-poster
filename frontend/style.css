@@ -392,7 +392,7 @@ body {
   min-height: 0;
   /* Air pour fil + pinces (#posterContainer::before/::after), sans couper la déco */
   overflow: visible;
-  padding-top: clamp(42px, 9cqi, 78px);
+  padding-top: clamp(56px, 14cqi, 136px);
   box-sizing: border-box;
   background: #e8eaef;
   border-radius: 5px;
@@ -523,10 +523,10 @@ body {
   pointer-events: none;
   /* Au-dessus du header pour que la mâchoire basse du SVG morde visiblement le bord du poster */
   z-index: 4;
-  width: clamp(33px, 4.8cqi, 51px);
-  height: clamp(60px, 8.7cqi, 87px);
+  width: clamp(44px, 6.3cqi, 69px);
+  height: clamp(80px, 11.6cqi, 116px);
   /* Bas de la pince un peu sous le bord haut du conteneur = effet « accroché » */
-  bottom: calc(100% - clamp(15px, 2.1cqi, 27px));
+  bottom: calc(100% - clamp(20px, 2.9cqi, 38px));
   background-repeat: no-repeat;
   background-position: center bottom;
   background-size: contain;
@@ -594,9 +594,9 @@ body {
   container-type: size;
   container-name: poster-hdr;
   padding-top: 0;
-  padding-block: 2px;
+  padding-block: 1px;
   padding-inline: 6px;
-  gap: 0;
+  gap: 2px;
   align-items: stretch;
 }
 
@@ -626,10 +626,10 @@ body {
 #posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-title {
   font-family: var(--poster-title-font, system-ui, sans-serif);
   color: var(--poster-title-color, #25272d);
-  /* Taille éditeur plafonnée par la hauteur du bandeau (cqh) */
+  /* Taille éditeur plafonnée par la hauteur du bandeau (cqh) — coefficients relevés pour mieux remplir le header */
   font-size: min(
     var(--poster-title-font-size, 1200px),
-    clamp(8px, min(22cqh, 14cqi), 120px)
+    clamp(11px, min(40cqh, 26cqi), 180px)
   );
   line-height: 1.02;
   font-weight: 800;
@@ -644,11 +644,18 @@ body {
   color: var(--poster-subtitle-color, #3d4152);
   font-size: min(
     var(--poster-subtitle-font-size, 1200px),
-    clamp(7px, min(17cqh, 11cqi), 96px)
+    clamp(9px, min(30cqh, 19cqi), 130px)
   );
   line-height: 1.02;
   font-weight: 700;
-  padding-bottom: 3px;
+  padding-bottom: 2px;
+  box-sizing: border-box;
+}
+
+#posterContainer.poster-sheet[data-band-synced="true"]
+  .poster-header:has(.poster-title.is-editor-underline)
+  .poster-subtitle {
+  padding-bottom: max(0.1em, 5px);
   box-sizing: border-box;
 }
 
@@ -663,7 +670,7 @@ body {
 }
 
 #posterContainer.poster-sheet[data-band-synced="true"] .poster-header .poster-title.is-editor-underline {
-  padding-bottom: max(0.55em, 12px);
+  padding-bottom: max(0.55em, 6px);
   box-sizing: border-box;
 }
 
@@ -716,14 +723,19 @@ body {
 
 /* Un peu d’air titre → sous-titre quand le titre est souligné */
 .poster-header:has(.poster-title.is-editor-underline) {
-  gap: 0.28em;
+  gap: 0.1em;
+}
+
+.poster-header:has(.poster-title.is-editor-underline) .poster-subtitle {
+  padding-bottom: max(0.12em, 4px);
+  box-sizing: border-box;
 }
 
 /* Typo du header : cqi = relatif au poster, tailles plus lisibles */
 .poster-sheet .poster-title {
   font-family: var(--poster-title-font, system-ui, sans-serif);
   color: var(--poster-title-color, #25272d);
-  font-size: var(--poster-title-font-size, clamp(14px, 6cqi, 30px));
+  font-size: var(--poster-title-font-size, clamp(16px, 8cqi, 40px));
   font-weight: 800;
   letter-spacing: 0.03em;
   margin: 0;
@@ -736,7 +748,7 @@ body {
 .poster-sheet .poster-subtitle {
   font-family: var(--poster-subtitle-font, system-ui, sans-serif);
   color: var(--poster-subtitle-color, #3d4152);
-  font-size: var(--poster-subtitle-font-size, clamp(10px, 4cqi, 20px));
+  font-size: var(--poster-subtitle-font-size, clamp(12px, 5.5cqi, 28px));
   font-weight: 700;
   opacity: 1;
   margin: 0;
@@ -762,7 +774,7 @@ body {
 }
 
 .poster-sheet .poster-title.is-editor-underline {
-  padding-bottom: 0.5em;
+  padding-bottom: 0.2em;
   box-sizing: border-box;
 }
 
@@ -932,7 +944,7 @@ body {
   object-position: center center;
 }
 
-/* Dernière ligne incomplète (ex. 100 films, 9 col) : flex pour répartir l’espace */
+/* Dernière ligne incomplète : flex ; en ×100 les vignettes gardent la largeur d’une colonne 8 et la ligne est centrée */
 .poster-grid-tail {
   grid-column: 1 / -1;
   display: flex;
@@ -949,10 +961,20 @@ body {
   min-width: 0;
 }
 
-/* Une seule vignette sur la dernière ligne : largeur ≈ 1 colonne, centrée */
-.poster-grid-tail .poster-film:only-child {
-  flex: 0 0 calc(100% / var(--poster-cols, 8));
-  max-width: calc(100% / var(--poster-cols, 8));
+/* 100 films : même largeur de cellule que le reste de la grille (8 col + gap), dernière ligne centrée */
+.poster-grid[data-layout="100"] .poster-grid-tail {
+  justify-content: center;
+}
+
+.poster-grid[data-layout="100"] .poster-grid-tail .poster-film {
+  flex: 0 0 calc((100% - (var(--poster-cols, 8) - 1) * var(--poster-gap, 10px)) / var(--poster-cols, 8));
+  max-width: calc((100% - (var(--poster-cols, 8) - 1) * var(--poster-gap, 10px)) / var(--poster-cols, 8));
+  min-width: 0;
+}
+
+.poster-grid[data-layout="100"] .poster-grid-tail .poster-film:only-child {
+  flex: 0 0 calc((100% - (var(--poster-cols, 8) - 1) * var(--poster-gap, 10px)) / var(--poster-cols, 8));
+  max-width: calc((100% - (var(--poster-cols, 8) - 1) * var(--poster-gap, 10px)) / var(--poster-cols, 8));
 }
 
 /* Grille 100 : air sous les affiches */
@@ -1025,23 +1047,9 @@ body {
   text-align: center;
 }
 
-/* YEAR */
-.poster-film .film-year {
-  font-size: 9px;
-  line-height: 1.2;
-  color: #6b7280;
-  white-space: nowrap;
-  flex-shrink: 0;
-  text-align: center;
-}
-
 /* 25 films : plus d’espace → typo plus grande */
 .poster-grid[data-layout="25"] .poster-film .film-title {
   font-size: 30px;
-}
-
-.poster-grid[data-layout="25"] .poster-film .film-year {
-  font-size: 20px;
 }
 
 .poster-grid[data-layout="25"] .poster-film .film-circle {
@@ -1054,10 +1062,6 @@ body {
   font-size: 20px;
 }
 
-.poster-grid[data-layout="48"] .poster-film .film-year {
-  font-size: 14px;
-}
-
 .poster-grid[data-layout="48"] .poster-film .film-circle {
   width: 20px;
   height: 20px;
@@ -1066,10 +1070,6 @@ body {
 /* 100 films (8×13) */
 .poster-grid[data-layout="100"] .poster-film .film-title {
   font-size: 11px;
-}
-
-.poster-grid[data-layout="100"] .poster-film .film-year {
-  font-size: 10px;
 }
 
 .poster-grid[data-layout="100"] .poster-film .film-circle {

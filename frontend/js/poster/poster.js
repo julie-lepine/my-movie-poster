@@ -83,13 +83,6 @@ function generatePoster(films) {
     titleEl.textContent = f.titre;
     info.appendChild(titleEl);
 
-    if (f.year) {
-      const yearEl = document.createElement("div");
-      yearEl.className = "film-year";
-      yearEl.textContent = String(f.year);
-      info.appendChild(yearEl);
-    }
-
     const circle = document.createElement("img");
     circle.className = "film-circle";
     circle.src = "./assets/site/circle.png";

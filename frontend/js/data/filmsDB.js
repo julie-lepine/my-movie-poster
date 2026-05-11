@@ -272,13 +272,13 @@ const filmsDB = [
     tags: ["nature", "soleil", "psychologique", "imaginaire"],
   },
   {
-    titre: "La vie est belle",
+    titre: "La vie est belle (1946)",
     year: 1946,
     image: "./assets/img/La Vie est Belle (1946).jpg",
     tags: ["sombre", "nature", "soleil", "psychologique"],
   },
   {
-    titre: "La vie est belle",
+    titre: "La vie est belle (1997)",
     year: 1997,
     image: "./assets/img/La Vie est Belle (1997).jpg",
     tags: ["soleil", "psychologique", "imaginaire", "renouveau"],

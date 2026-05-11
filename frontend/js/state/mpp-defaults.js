@@ -3,8 +3,8 @@ var DEFAULT_TITLE = "Ton univers cinéma";
 var DEFAULT_SUBTITLE = "Création personnalisée";
 var DEFAULT_TITLE_COLOR = "#25272d";
 var DEFAULT_SUBTITLE_COLOR = "#3d4152";
-var DEFAULT_TITLE_FONT_SIZE_PX = 26;
-var DEFAULT_SUBTITLE_FONT_SIZE_PX = 16;
+var DEFAULT_TITLE_FONT_SIZE_PX = 34;
+var DEFAULT_SUBTITLE_FONT_SIZE_PX = 22;
 
 var titleTextFormat = {
   bold: false,
