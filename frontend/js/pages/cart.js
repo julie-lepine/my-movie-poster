@@ -21,6 +21,15 @@ function getCartItemSubtitle(item) {
   return item.customization?.subtitle || "Création personnalisée";
 }
 
+function getCartDownloadFilename(item) {
+  return `${getCartItemTitle(item)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "poster"}-mymoviesposter.jpg`;
+}
+
 function getCartPosterColumnCount(item, filmCount) {
   const layoutCount = Number(item.layoutCount || filmCount);
   if (layoutCount <= 25) return 5;
@@ -48,6 +57,8 @@ function createCartThumbnail(film) {
   img.src = film.image;
   img.alt = film.titre || "";
   img.loading = "lazy";
+  img.decoding = "async";
+  protectImageElement(img);
   return img;
 }
 
@@ -87,6 +98,8 @@ function createCartPosterPreview(item) {
     img.src = film.image;
     img.alt = film.titre || "";
     img.loading = "lazy";
+    img.decoding = "async";
+    protectImageElement(img);
 
     figure.appendChild(img);
     grid.appendChild(figure);
@@ -97,6 +110,8 @@ function createCartPosterPreview(item) {
   const logo = document.createElement("img");
   logo.src = "./assets/site/logo.png";
   logo.alt = "My Movies Poster";
+  logo.decoding = "async";
+  protectImageElement(logo);
   footer.appendChild(logo);
 
   header.appendChild(title);
@@ -114,7 +129,17 @@ function openCartPreview(item) {
   if (!modal || !content) return;
 
   content.innerHTML = "";
-  content.appendChild(createCartPosterPreview(item));
+  if (item.posterImage) {
+    const img = document.createElement("img");
+    img.className = "cart-preview-rendered-image";
+    img.src = item.posterImage;
+    img.alt = getCartItemTitle(item);
+    img.decoding = "async";
+    protectImageElement(img);
+    content.appendChild(img);
+  } else {
+    content.appendChild(createCartPosterPreview(item));
+  }
   modal.hidden = false;
   document.getElementById("cartPreviewClose")?.focus();
 }
@@ -130,8 +155,19 @@ function createCartItem(item, index) {
 
   const preview = document.createElement("div");
   preview.className = "cart-item-preview";
-  const previewFilms = (item.films || []).slice(0, 9);
-  previewFilms.forEach((film) => preview.appendChild(createCartThumbnail(film)));
+  if (item.posterImage) {
+    preview.classList.add("cart-item-preview--poster");
+    const posterImg = document.createElement("img");
+    posterImg.src = item.posterImage;
+    posterImg.alt = getCartItemTitle(item);
+    posterImg.loading = "lazy";
+    posterImg.decoding = "async";
+    protectImageElement(posterImg);
+    preview.appendChild(posterImg);
+  } else {
+    const previewFilms = (item.films || []).slice(0, 9);
+    previewFilms.forEach((film) => preview.appendChild(createCartThumbnail(film)));
+  }
 
   const details = document.createElement("div");
   details.className = "cart-item-details";
@@ -161,6 +197,18 @@ function createCartItem(item, index) {
   view.textContent = "Visualiser le poster";
   view.addEventListener("click", () => openCartPreview(item));
 
+  const download = document.createElement("a");
+  download.className = "cart-download-item";
+  download.textContent = "Télécharger le JPEG";
+  if (item.posterImage) {
+    download.href = item.posterImage;
+    download.download = getCartDownloadFilename(item);
+  } else {
+    download.href = "#";
+    download.setAttribute("aria-disabled", "true");
+    download.addEventListener("click", (event) => event.preventDefault());
+  }
+
   const remove = document.createElement("button");
   remove.type = "button";
   remove.className = "cart-remove-item";
@@ -177,6 +225,7 @@ function createCartItem(item, index) {
   details.appendChild(subtitle);
   details.appendChild(meta);
   actions.appendChild(view);
+  actions.appendChild(download);
   actions.appendChild(remove);
   details.appendChild(actions);
   article.appendChild(preview);
@@ -207,14 +256,17 @@ function renderCart() {
     empty.innerHTML = `
       <p>Aucun poster dans ton panier pour le moment.</p>
       <a href="vitrine.html">Découvrir la vitrine</a>
+      <a href="mon-poster.html">Générer un poster</a>
     `;
     root.appendChild(empty);
     return;
   }
 
+  const fragment = document.createDocumentFragment();
   items.forEach((item, index) => {
-    root.appendChild(createCartItem(item, index));
+    fragment.appendChild(createCartItem(item, index));
   });
+  root.appendChild(fragment);
 }
 
 document.getElementById("cartClearAll")?.addEventListener("click", () => {

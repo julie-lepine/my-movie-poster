@@ -17,6 +17,14 @@ function normalizeGalleryText(value) {
     .toLowerCase();
 }
 
+function debounceGalleryAction(callback, delay = 120) {
+  let timer = 0;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => callback(...args), delay);
+  };
+}
+
 function shuffleGalleryFilms(films) {
   const copy = [...films];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -41,12 +49,14 @@ function fillGallerySelect(selectId, values, placeholder) {
   const select = document.getElementById(selectId);
   if (!select) return;
   select.innerHTML = `<option value="">${placeholder}</option>`;
+  const fragment = document.createDocumentFragment();
   values.forEach((value) => {
     const option = document.createElement("option");
     option.value = value;
     option.textContent = value;
-    select.appendChild(option);
+    fragment.appendChild(option);
   });
+  select.appendChild(fragment);
 }
 
 function toGalleryArray(value) {
@@ -102,6 +112,7 @@ function setupGalleryFilterOptions() {
   };
 
   colorRoot.innerHTML = "";
+  const fragment = document.createDocumentFragment();
   getUniqueGalleryValues((film) => toGalleryArray(film.couleurs)).forEach((colorName) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -115,8 +126,9 @@ function setupGalleryFilterOptions() {
       syncGalleryColorButtons();
       applyGalleryFilters();
     });
-    colorRoot.appendChild(button);
+    fragment.appendChild(button);
   });
+  colorRoot.appendChild(fragment);
 }
 
 function syncGalleryColorButtons() {
@@ -215,6 +227,8 @@ function createGalleryCard(film) {
   img.src = film.image;
   img.alt = film.titre;
   img.loading = "lazy";
+  img.decoding = "async";
+  protectImageElement(img);
 
   const content = document.createElement("span");
   content.className = "gallery-card-content";
@@ -245,6 +259,8 @@ function createGalleryCard(film) {
   const selectIcon = document.createElement("img");
   selectIcon.src = "./assets/site/circle.png";
   selectIcon.alt = "";
+  selectIcon.decoding = "async";
+  protectImageElement(selectIcon);
   selectButton.appendChild(selectIcon);
 
   card.appendChild(preview);
@@ -267,7 +283,9 @@ function renderGalleryGrid() {
     empty.textContent = "Aucun film ne correspond aux filtres.";
     grid.appendChild(empty);
   } else {
-    visibleFilms.forEach((film) => grid.appendChild(createGalleryCard(film)));
+    const fragment = document.createDocumentFragment();
+    visibleFilms.forEach((film) => fragment.appendChild(createGalleryCard(film)));
+    grid.appendChild(fragment);
   }
 
   if (loadMore) {
@@ -283,6 +301,8 @@ function createGallerySelectionItem(film) {
   img.src = film.image;
   img.alt = "";
   img.loading = "lazy";
+  img.decoding = "async";
+  protectImageElement(img);
 
   const info = document.createElement("div");
   info.className = "gallery-selection-film-info";
@@ -291,6 +311,8 @@ function createGallerySelectionItem(film) {
   circle.className = "gallery-selection-film-circle";
   circle.src = "./assets/site/circle.png";
   circle.alt = "";
+  circle.decoding = "async";
+  protectImageElement(circle);
 
   const title = document.createElement("span");
   title.className = "gallery-selection-film-title";
@@ -364,9 +386,11 @@ function renderGallerySelection() {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
   galleryState.selectedFilms.forEach((film) => {
-    grid.appendChild(createGallerySelectionItem(film));
+    fragment.appendChild(createGallerySelectionItem(film));
   });
+  grid.appendChild(fragment);
 }
 
 function openGalleryCustomizer() {
@@ -382,7 +406,7 @@ function closeGalleryCustomizer() {
   if (modal) modal.hidden = true;
 }
 
-function addGallerySelectionToCart() {
+async function addGallerySelectionToCart() {
   const feedback = document.getElementById("galleryCartFeedback");
   if (!galleryState.selectedFilms.length) return;
 
@@ -397,13 +421,35 @@ function addGallerySelectionToCart() {
     })),
   };
 
+  if (feedback) {
+    feedback.textContent = "Préparation du rendu...";
+  }
+
+  try {
+    cartItem.posterImage = await window.MppPosterJpeg?.createPosterJpeg(cartItem, {
+      width: 1400,
+      quality: 0.88,
+    });
+  } catch (error) {
+    console.warn("Impossible de générer le JPEG du poster.", error);
+  }
+
   try {
     const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
     existingCart.push(cartItem);
     localStorage.setItem("mppCart", JSON.stringify(existingCart));
     window.updateMppCartIndicator?.();
   } catch (error) {
-    console.warn("Impossible d'enregistrer le panier local.", error);
+    console.warn("Impossible d'enregistrer le panier local avec le JPEG.", error);
+    delete cartItem.posterImage;
+    try {
+      const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
+      existingCart.push(cartItem);
+      localStorage.setItem("mppCart", JSON.stringify(existingCart));
+      window.updateMppCartIndicator?.();
+    } catch (fallbackError) {
+      console.warn("Impossible d'enregistrer le panier local.", fallbackError);
+    }
   }
 
   if (feedback) {
@@ -494,6 +540,8 @@ function openGalleryLightbox(film) {
   const img = document.createElement("img");
   img.src = film.image;
   img.alt = film.titre;
+  img.decoding = "async";
+  protectImageElement(img);
 
   const content = document.createElement("span");
   content.className = "gallery-card-content";
@@ -521,6 +569,7 @@ function closeGalleryLightbox() {
 function setupGalleryPage() {
   galleryState.films = shuffleGalleryFilms(filmsDB.filter((film) => film.image));
   galleryState.filteredFilms = [...galleryState.films];
+  const applyGalleryFiltersDebounced = debounceGalleryAction(applyGalleryFilters);
   setupGalleryFilterOptions();
   setupGalleryCustomizer();
   renderGalleryGrid();
@@ -544,7 +593,7 @@ function setupGalleryPage() {
   });
   document
     .getElementById("gallerySearchInput")
-    ?.addEventListener("input", applyGalleryFilters);
+    ?.addEventListener("input", applyGalleryFiltersDebounced);
   document
     .getElementById("gallerySelectFiltered")
     ?.addEventListener("click", selectFilteredGalleryFilms);

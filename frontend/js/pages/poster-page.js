@@ -16,6 +16,7 @@ function renderCurrentQuestion(withFade = true) {
     questionTitle.textContent = current.question;
     answersGrid.innerHTML = "";
 
+    const fragment = document.createDocumentFragment();
     current.options.forEach((option) => {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -30,6 +31,8 @@ function renderCurrentQuestion(withFade = true) {
         img.src = optionImage;
         img.alt = option.label;
         img.loading = "lazy";
+        img.decoding = "async";
+        protectImageElement(img);
         media.appendChild(img);
       } else {
         const placeholder = document.createElement("div");
@@ -49,8 +52,9 @@ function renderCurrentQuestion(withFade = true) {
         btn.classList.add("selected");
       }
       btn.addEventListener("click", () => handleAnswerSelect(option.value));
-      answersGrid.appendChild(btn);
+      fragment.appendChild(btn);
     });
+    answersGrid.appendChild(fragment);
 
     prevQuestionBtn.disabled = currentQuestionIndex === 0;
   };

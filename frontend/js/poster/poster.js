@@ -3,6 +3,16 @@
 // (références DOM et constantes : globals mpp-dom / mpp-defaults)
 // =====================
 
+var posterLayoutFrame = 0;
+
+function schedulePosterLayoutMetrics() {
+  if (posterLayoutFrame) return;
+  posterLayoutFrame = requestAnimationFrame(() => {
+    posterLayoutFrame = 0;
+    syncPosterLayoutMetrics();
+  });
+}
+
 function generatePoster(films) {
   const grid = document.getElementById("posterGrid");
   const requestedCount = Number(posterCountSelect?.value || 100);
@@ -63,17 +73,16 @@ function generatePoster(films) {
   const remainder = safeCount % cols;
   const mainCount = remainder === 0 ? safeCount : safeCount - remainder;
 
-  function appendFilmCard(f, i, parent = grid) {
+  function appendFilmCard(f, i, parent) {
     const card = document.createElement("div");
-    card.className = "poster-film";
-
-    card.style.opacity = "0";
-    card.style.transform = "scale(0.95)";
-    card.style.transition = "0.5s ease";
+    card.className = "poster-film poster-film--entering";
+    card.style.setProperty("--poster-film-delay", `${i * 28}ms`);
 
     const img = document.createElement("img");
     img.src = f.image;
     img.alt = "";
+    img.decoding = "async";
+    protectImageElement(img);
 
     const info = document.createElement("div");
     info.className = "film-info";
@@ -93,52 +102,50 @@ function generatePoster(films) {
     circle.className = "film-circle";
     circle.src = "./assets/site/circle.png";
     circle.alt = "";
+    circle.decoding = "async";
+    protectImageElement(circle);
 
     info.appendChild(circle);
     card.appendChild(img);
     card.appendChild(info);
 
     parent.appendChild(card);
-
-    setTimeout(() => {
-      card.style.opacity = "1";
-      card.style.transform = "scale(1)";
-    }, i * 28);
     return card;
   }
 
+  const gridFragment = document.createDocumentFragment();
   for (let i = 0; i < mainCount; i++) {
-    appendFilmCard(filmsToShow[i], i, grid);
+    appendFilmCard(filmsToShow[i], i, gridFragment);
   }
+  grid.appendChild(gridFragment);
 
   if (remainder > 0) {
     const tail = document.createElement("div");
     tail.className = "poster-grid-tail";
     tail.style.setProperty("--poster-tail-count", String(remainder));
+    const tailFragment = document.createDocumentFragment();
     for (let j = 0; j < remainder; j++) {
       const i = mainCount + j;
-      appendFilmCard(filmsToShow[i], i, tail);
+      appendFilmCard(filmsToShow[i], i, tailFragment);
     }
+    tail.appendChild(tailFragment);
     grid.appendChild(tail);
   }
 
   scheduleMagnifierCloneRefresh();
-  requestAnimationFrame(() => {
-    requestAnimationFrame(syncPosterLayoutMetrics);
-  });
+  schedulePosterLayoutMetrics();
   grid.querySelectorAll(".poster-film > img").forEach((imgEl) => {
-    const bump = () => requestAnimationFrame(syncPosterLayoutMetrics);
-    if (imgEl.complete) bump();
-    else imgEl.addEventListener("load", bump, { passive: true });
+    if (!imgEl.complete) {
+      imgEl.addEventListener("load", schedulePosterLayoutMetrics, { passive: true, once: true });
+    }
   });
 
   const footerLogo = poster.querySelector(".poster-footer-logo");
   if (footerLogo && !footerLogo.complete) {
-    footerLogo.addEventListener(
-      "load",
-      () => requestAnimationFrame(syncPosterLayoutMetrics),
-      { passive: true }
-    );
+    footerLogo.addEventListener("load", schedulePosterLayoutMetrics, {
+      passive: true,
+      once: true,
+    });
   }
 
   syncPosterZoomToggleUI();
@@ -160,12 +167,12 @@ function collectPosterFilmCardsForBandHeight(grid) {
   return collectPosterFilmCards(grid);
 }
 
-function syncPosterHeaderFooterBandHeight() {
+function syncPosterHeaderFooterBandHeight(measuredCards) {
   const posterEl = document.getElementById("posterContainer");
   const grid = document.getElementById("posterGrid");
   if (!posterEl || !grid || posterWorkspace.style.display === "none") return;
 
-  const cards = collectPosterFilmCardsForBandHeight(grid);
+  const cards = measuredCards || collectPosterFilmCardsForBandHeight(grid);
   if (!cards.length) {
     posterEl.style.removeProperty("--poster-band-height");
     posterEl.removeAttribute("data-band-synced");
@@ -175,7 +182,7 @@ function syncPosterHeaderFooterBandHeight() {
   let prevApplied = -2;
   for (let step = 0; step < 12; step++) {
     let maxH = 0;
-    for (const el of collectPosterFilmCardsForBandHeight(grid)) {
+    for (const el of cards) {
       maxH = Math.max(maxH, el.offsetHeight);
     }
     if (maxH < 8) return;
@@ -191,9 +198,11 @@ function syncPosterHeaderFooterBandHeight() {
 }
 
 function syncPosterLayoutMetrics() {
-  syncPosterHeaderFooterBandHeight();
+  const grid = document.getElementById("posterGrid");
+  const cards = grid ? collectPosterFilmCardsForBandHeight(grid) : [];
+  syncPosterHeaderFooterBandHeight(cards);
   fitPosterFilmTitles();
-  syncPosterHeaderFooterBandHeight();
+  syncPosterHeaderFooterBandHeight(cards);
   syncPosterPreviewSlotSize();
 }
 
@@ -205,6 +214,8 @@ function readCssNumber(el, propertyName, fallback) {
 
 function fitPosterFilmTitle(titleEl) {
   if (!titleEl || titleEl.clientWidth < 1 || titleEl.clientHeight < 1) return;
+  const fitKey = `${Math.round(titleEl.clientWidth)}x${Math.round(titleEl.clientHeight)}`;
+  if (titleEl.dataset.fitKey === fitKey) return;
 
   const computed = getComputedStyle(titleEl);
   const currentFontSize = parseFloat(computed.fontSize) || 10;
@@ -216,7 +227,10 @@ function fitPosterFilmTitle(titleEl) {
     titleEl.scrollHeight <= titleEl.clientHeight + 1;
 
   titleEl.style.setProperty("--film-title-fit-size", `${maxSize}px`);
-  if (fits()) return;
+  if (fits()) {
+    titleEl.dataset.fitKey = fitKey;
+    return;
+  }
 
   let low = minSize;
   let high = maxSize;
@@ -228,6 +242,7 @@ function fitPosterFilmTitle(titleEl) {
   }
 
   titleEl.style.setProperty("--film-title-fit-size", `${low.toFixed(2)}px`);
+  titleEl.dataset.fitKey = fitKey;
 }
 
 function fitPosterFilmTitles() {
@@ -256,12 +271,12 @@ function setupPosterPreviewLayoutSync() {
   if (!posterEl || typeof ResizeObserver === "undefined") return;
 
   const ro = new ResizeObserver(() => {
-    requestAnimationFrame(syncPosterLayoutMetrics);
+    schedulePosterLayoutMetrics();
   });
   ro.observe(posterEl);
 
   window.addEventListener("resize", () => {
-    requestAnimationFrame(syncPosterLayoutMetrics);
+    schedulePosterLayoutMetrics();
   });
 }
 
@@ -307,7 +322,7 @@ function scheduleMagnifierCloneRefresh() {
       posterMagnifier.hidden = true;
       posterMagnifier.setAttribute("aria-hidden", "true");
     }
-    requestAnimationFrame(syncPosterLayoutMetrics);
+    schedulePosterLayoutMetrics();
     return;
   }
   if (!posterMagnifierEnabled) {
@@ -317,12 +332,12 @@ function scheduleMagnifierCloneRefresh() {
       posterMagnifier.hidden = true;
       posterMagnifier.setAttribute("aria-hidden", "true");
     }
-    requestAnimationFrame(syncPosterLayoutMetrics);
+    schedulePosterLayoutMetrics();
     return;
   }
   magnifierCloneTimer = setTimeout(() => {
     refreshPosterMagnifierClone();
-    requestAnimationFrame(syncPosterLayoutMetrics);
+    schedulePosterLayoutMetrics();
   }, 500);
 }
 
@@ -388,7 +403,7 @@ function setupPosterZoomToggle() {
     if (posterMagnifierEnabled) {
       scheduleMagnifierCloneRefresh();
     } else {
-      requestAnimationFrame(syncPosterLayoutMetrics);
+      schedulePosterLayoutMetrics();
     }
   });
   syncPosterZoomToggleUI();
@@ -485,7 +500,7 @@ function applyPosterTypographyFromEditor() {
   syncPosterTextCustomization();
 }
 
-function addPosterToCart() {
+async function addPosterToCart() {
   const feedback = document.getElementById("posterCartFeedback");
   const requestedCount = Number(posterCountSelect?.value || 100);
   const allowedCounts = [25, 48, 100];
@@ -506,13 +521,35 @@ function addPosterToCart() {
     })),
   };
 
+  if (feedback) {
+    feedback.textContent = "Préparation du rendu...";
+  }
+
+  try {
+    cartItem.posterImage = await window.MppPosterJpeg?.createPosterJpeg(cartItem, {
+      width: 1500,
+      quality: 0.88,
+    });
+  } catch (error) {
+    console.warn("Impossible de générer le JPEG du poster.", error);
+  }
+
   try {
     const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
     existingCart.push(cartItem);
     localStorage.setItem("mppCart", JSON.stringify(existingCart));
     window.updateMppCartIndicator?.();
   } catch (error) {
-    console.warn("Impossible d'enregistrer le panier local.", error);
+    console.warn("Impossible d'enregistrer le panier local avec le JPEG.", error);
+    delete cartItem.posterImage;
+    try {
+      const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
+      existingCart.push(cartItem);
+      localStorage.setItem("mppCart", JSON.stringify(existingCart));
+      window.updateMppCartIndicator?.();
+    } catch (fallbackError) {
+      console.warn("Impossible d'enregistrer le panier local.", fallbackError);
+    }
   }
 
   if (feedback) {

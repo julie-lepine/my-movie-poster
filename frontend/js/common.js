@@ -3,6 +3,7 @@
 function protectImageElement(img) {
   if (!img) return;
   img.draggable = false;
+  if (!img.decoding || img.decoding === "auto") img.decoding = "async";
   img.setAttribute("draggable", "false");
 }
 
@@ -28,18 +29,6 @@ function setupImageDownloadDissuasion() {
     },
     true
   );
-
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
-        if (node.nodeType !== Node.ELEMENT_NODE) return;
-        if (node.matches?.("img")) protectImageElement(node);
-        node.querySelectorAll?.("img").forEach(protectImageElement);
-      });
-    });
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function readMppCartCount() {
