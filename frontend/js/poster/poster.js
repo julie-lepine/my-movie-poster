@@ -81,7 +81,13 @@ function generatePoster(films) {
     const titleEl = document.createElement("div");
     titleEl.className = "film-title";
     titleEl.textContent = f.titre;
+    titleEl.title = f.titre;
     info.appendChild(titleEl);
+
+    const yearEl = document.createElement("div");
+    yearEl.className = "film-year";
+    yearEl.textContent = f.year || "";
+    info.appendChild(yearEl);
 
     const circle = document.createElement("img");
     circle.className = "film-circle";
@@ -186,7 +192,49 @@ function syncPosterHeaderFooterBandHeight() {
 
 function syncPosterLayoutMetrics() {
   syncPosterHeaderFooterBandHeight();
+  fitPosterFilmTitles();
+  syncPosterHeaderFooterBandHeight();
   syncPosterPreviewSlotSize();
+}
+
+function readCssNumber(el, propertyName, fallback) {
+  const raw = getComputedStyle(el).getPropertyValue(propertyName);
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function fitPosterFilmTitle(titleEl) {
+  if (!titleEl || titleEl.clientWidth < 1 || titleEl.clientHeight < 1) return;
+
+  const computed = getComputedStyle(titleEl);
+  const currentFontSize = parseFloat(computed.fontSize) || 10;
+  const maxSize = readCssNumber(titleEl, "--film-title-max-size", currentFontSize);
+  const minSize = readCssNumber(titleEl, "--film-title-min-size", Math.max(5, maxSize * 0.45));
+
+  const fits = () =>
+    titleEl.scrollWidth <= titleEl.clientWidth + 1 &&
+    titleEl.scrollHeight <= titleEl.clientHeight + 1;
+
+  titleEl.style.setProperty("--film-title-fit-size", `${maxSize}px`);
+  if (fits()) return;
+
+  let low = minSize;
+  let high = maxSize;
+  for (let i = 0; i < 12; i++) {
+    const mid = (low + high) / 2;
+    titleEl.style.setProperty("--film-title-fit-size", `${mid}px`);
+    if (fits()) low = mid;
+    else high = mid;
+  }
+
+  titleEl.style.setProperty("--film-title-fit-size", `${low.toFixed(2)}px`);
+}
+
+function fitPosterFilmTitles() {
+  const grid = document.getElementById("posterGrid");
+  if (!grid || posterWorkspace.style.display === "none") return;
+
+  grid.querySelectorAll(".film-title").forEach(fitPosterFilmTitle);
 }
 
 function syncPosterPreviewSlotSize() {
