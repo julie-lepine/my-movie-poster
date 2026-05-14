@@ -10,6 +10,7 @@ function readCartItems() {
 
 function writeCartItems(items) {
   localStorage.setItem("mppCart", JSON.stringify(items));
+  window.updateMppCartIndicator?.();
 }
 
 function getCartItemTitle(item) {
@@ -20,12 +21,107 @@ function getCartItemSubtitle(item) {
   return item.customization?.subtitle || "Création personnalisée";
 }
 
+function getCartPosterColumnCount(item, filmCount) {
+  const layoutCount = Number(item.layoutCount || filmCount);
+  if (layoutCount <= 25) return 5;
+  if (layoutCount <= 48) return 6;
+  if (layoutCount >= 100) return 8;
+  return Math.max(3, Math.ceil(Math.sqrt(filmCount || 1)));
+}
+
+function setCartTextStyle(el, customization = {}, scope) {
+  const format = customization[`${scope}Format`] || {};
+  const font = customization[`${scope}Font`];
+  const color = customization[`${scope}Color`];
+  const size = Number(customization[`${scope}Size`]);
+
+  if (font) el.style.fontFamily = font;
+  if (color) el.style.color = color;
+  if (Number.isFinite(size) && size > 0) el.style.fontSize = `${size}px`;
+  el.style.fontWeight = format.bold ? "900" : "";
+  el.style.fontStyle = format.italic ? "italic" : "";
+  el.style.textDecoration = format.strike ? "line-through" : "none";
+}
+
 function createCartThumbnail(film) {
   const img = document.createElement("img");
   img.src = film.image;
   img.alt = film.titre || "";
   img.loading = "lazy";
   return img;
+}
+
+function createCartPosterPreview(item) {
+  const customization = item.customization || {};
+  const films = item.films || [];
+  const poster = document.createElement("article");
+  poster.className = "cart-preview-poster-sheet";
+  poster.classList.toggle("cart-preview-poster-sheet--square", item.type === "selection-poster");
+
+  if (customization.backgroundImage) {
+    poster.style.backgroundImage = `url("${String(customization.backgroundImage).replace(/"/g, '\\"')}")`;
+  }
+
+  const header = document.createElement("header");
+  header.className = "cart-preview-poster-header";
+
+  const title = document.createElement("div");
+  title.className = "cart-preview-poster-title";
+  title.textContent = getCartItemTitle(item);
+  setCartTextStyle(title, customization, "title");
+
+  const subtitle = document.createElement("div");
+  subtitle.className = "cart-preview-poster-subtitle";
+  subtitle.textContent = getCartItemSubtitle(item);
+  setCartTextStyle(subtitle, customization, "subtitle");
+
+  const grid = document.createElement("div");
+  grid.className = "cart-preview-poster-grid";
+  grid.style.setProperty("--cart-preview-cols", String(getCartPosterColumnCount(item, films.length)));
+
+  films.forEach((film) => {
+    const figure = document.createElement("figure");
+    figure.className = "cart-preview-poster-film";
+
+    const img = document.createElement("img");
+    img.src = film.image;
+    img.alt = film.titre || "";
+    img.loading = "lazy";
+
+    figure.appendChild(img);
+    grid.appendChild(figure);
+  });
+
+  const footer = document.createElement("footer");
+  footer.className = "cart-preview-poster-footer";
+  const logo = document.createElement("img");
+  logo.src = "./assets/site/logo.png";
+  logo.alt = "My Movies Poster";
+  footer.appendChild(logo);
+
+  header.appendChild(title);
+  header.appendChild(subtitle);
+  poster.appendChild(header);
+  poster.appendChild(grid);
+  poster.appendChild(footer);
+
+  return poster;
+}
+
+function openCartPreview(item) {
+  const modal = document.getElementById("cartPreviewModal");
+  const content = document.getElementById("cartPreviewContent");
+  if (!modal || !content) return;
+
+  content.innerHTML = "";
+  content.appendChild(createCartPosterPreview(item));
+  modal.hidden = false;
+  document.getElementById("cartPreviewClose")?.focus();
+}
+
+function closeCartPreview() {
+  const modal = document.getElementById("cartPreviewModal");
+  if (modal) modal.hidden = true;
 }
 
 function createCartItem(item, index) {
@@ -56,6 +152,15 @@ function createCartItem(item, index) {
   const filmCount = item.films?.length || 0;
   meta.textContent = `${filmCount} film${filmCount > 1 ? "s" : ""}`;
 
+  const actions = document.createElement("div");
+  actions.className = "cart-item-actions";
+
+  const view = document.createElement("button");
+  view.type = "button";
+  view.className = "cart-view-item";
+  view.textContent = "Visualiser le poster";
+  view.addEventListener("click", () => openCartPreview(item));
+
   const remove = document.createElement("button");
   remove.type = "button";
   remove.className = "cart-remove-item";
@@ -71,7 +176,9 @@ function createCartItem(item, index) {
   details.appendChild(title);
   details.appendChild(subtitle);
   details.appendChild(meta);
-  details.appendChild(remove);
+  actions.appendChild(view);
+  actions.appendChild(remove);
+  details.appendChild(actions);
   article.appendChild(preview);
   article.appendChild(details);
 
@@ -113,6 +220,16 @@ function renderCart() {
 document.getElementById("cartClearAll")?.addEventListener("click", () => {
   writeCartItems([]);
   renderCart();
+});
+
+document.getElementById("cartPreviewClose")?.addEventListener("click", closeCartPreview);
+
+document.getElementById("cartPreviewModal")?.addEventListener("click", (event) => {
+  if (event.target.id === "cartPreviewModal") closeCartPreview();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeCartPreview();
 });
 
 renderCart();

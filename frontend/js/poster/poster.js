@@ -510,14 +510,13 @@ function addPosterToCart() {
     const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
     existingCart.push(cartItem);
     localStorage.setItem("mppCart", JSON.stringify(existingCart));
+    window.updateMppCartIndicator?.();
   } catch (error) {
     console.warn("Impossible d'enregistrer le panier local.", error);
   }
 
   if (feedback) {
-    feedback.textContent = `${filmsToShow.length} film${filmsToShow.length > 1 ? "s" : ""} ajouté${
-      filmsToShow.length > 1 ? "s" : ""
-    } au panier.`;
+    feedback.textContent = "Poster ajouté au panier.";
   }
 }
 

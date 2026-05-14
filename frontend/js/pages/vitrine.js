@@ -318,10 +318,20 @@ function getGallerySelectionColumnCount(count) {
   return 6;
 }
 
+function getGallerySelectionRowHeight(columnCount) {
+  if (columnCount <= 1) return 210;
+  if (columnCount <= 2) return 168;
+  if (columnCount <= 3) return 136;
+  if (columnCount <= 4) return 116;
+  if (columnCount <= 5) return 104;
+  return 92;
+}
+
 function renderGallerySelection() {
   const grid = document.getElementById("gallerySelectionGrid");
   const count = document.getElementById("gallerySelectionCount");
   const addToCart = document.getElementById("galleryAddToCart");
+  const poster = grid?.closest(".gallery-selection-poster");
   if (!grid) return;
 
   const selectedCount = galleryState.selectedFilms.length;
@@ -336,9 +346,14 @@ function renderGallerySelection() {
   syncGallerySelectionActionButtons();
 
   grid.innerHTML = "";
-  grid.style.setProperty(
-    "--gallery-selection-cols",
-    String(getGallerySelectionColumnCount(selectedCount))
+  const columnCount = getGallerySelectionColumnCount(selectedCount);
+  const rowCount = Math.max(1, Math.ceil(selectedCount / columnCount));
+  const styleTarget = poster || grid;
+  styleTarget.style.setProperty("--gallery-selection-cols", String(columnCount));
+  styleTarget.style.setProperty("--gallery-selection-rows", String(rowCount));
+  styleTarget.style.setProperty(
+    "--gallery-selection-row-height",
+    `${getGallerySelectionRowHeight(columnCount)}px`
   );
 
   if (!selectedCount) {
@@ -386,15 +401,13 @@ function addGallerySelectionToCart() {
     const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
     existingCart.push(cartItem);
     localStorage.setItem("mppCart", JSON.stringify(existingCart));
+    window.updateMppCartIndicator?.();
   } catch (error) {
     console.warn("Impossible d'enregistrer le panier local.", error);
   }
 
   if (feedback) {
-    const count = galleryState.selectedFilms.length;
-    feedback.textContent = `${count} film${count > 1 ? "s" : ""} ajouté${
-      count > 1 ? "s" : ""
-    } au panier.`;
+    feedback.textContent = "Poster ajouté au panier.";
   }
 }
 
