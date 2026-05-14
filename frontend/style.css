@@ -192,6 +192,12 @@ img {
   text-align: justify;
 }
 
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
 .home-cta {
   margin-top: 10px;
   padding: 10px 18px;
