@@ -1,16 +1,10 @@
-﻿// =====================
-// QUIZ + flux final (état / DOM / mapping / reco / poster : autres fichiers)
-// =====================
+// Flux quiz -> recommandations -> poster. Chargé uniquement sur la page Mon Poster.
 
-function initUI() {
+function initPosterPage() {
   runMappingSanityCheck();
-  posterWorkspace.style.display = "none";
-  results.style.display = "none";
   renderCurrentQuestion(false);
   updateProgress();
 }
-
-initUI();
 
 function renderCurrentQuestion(withFade = true) {
   const quizCard = document.getElementById("quizCard");
@@ -124,6 +118,7 @@ function runFinal() {
 
     quiz.style.display = "none";
     results.style.display = "none";
+    progress.parentElement.style.display = "none";
 
     posterWorkspace.style.display = "flex";
     poster.style.display = "grid";
@@ -154,3 +149,5 @@ function showLoading() {
 function hideLoading() {
   loading.classList.add("hidden");
 }
+
+initPosterPage();
