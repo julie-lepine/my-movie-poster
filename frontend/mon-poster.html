@@ -192,9 +192,26 @@
         <button type="button" class="poster-editor-fmt-btn" id="subtitleFmtStrike" aria-pressed="false" title="Barré">R</button>
       </div>
 
+      <label for="filmTitleColorInput"><strong>Couleur des titres de films</strong></label>
+      <input id="filmTitleColorInput" class="poster-editor-color" type="color" value="#31343c" />
+
+      <label for="filmYearColorInput">Couleur des années</label>
+      <input id="filmYearColorInput" class="poster-editor-color" type="color" value="#5c606b" />
+
+      <label for="filmCircleSelect">Icône sous les films</label>
+      <select id="filmCircleSelect">
+        <option value="./assets/site/circle.png" selected>Bleu</option>
+        <option value="./assets/site/circle-grey.png">Gris</option>
+        <option value="./assets/site/circle-purple.png">Violet</option>
+        <option value="./assets/site/circle-pink.png">Rose</option>
+        <option value="./assets/site/circle-yellow.png">Jaune</option>
+        <option value="./assets/site/circle-light-green.png">Vert clair</option>
+      </select>
+
       <label for="posterBackgroundSelect"><strong>Fond d'écran</strong></label>
       <select id="posterBackgroundSelect">
-        <option value="assets/img/backgrounds/bg.png" selected>Fond 1</option>
+        <option value="" selected>Aucun fond</option>
+        <option value="assets/img/backgrounds/bg.png">Fond 1</option>
         <option value="assets/img/backgrounds/bg2.png">Fond 2</option>
         <option value="assets/img/backgrounds/bg3.png">Fond 3</option>
         <option value="assets/img/backgrounds/bg4.png">Fond 4</option>

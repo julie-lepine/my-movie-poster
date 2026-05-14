@@ -90,6 +90,13 @@ function syncPosterCustomizePreview() {
     target.style.cssText = source.style.cssText;
   });
 
+  const sourceCircles = poster.querySelectorAll(".film-circle");
+  const targetCircles = clone.querySelectorAll(".film-circle");
+  sourceCircles.forEach((source, index) => {
+    const target = targetCircles[index];
+    if (target && target.src !== source.src) target.src = source.src;
+  });
+
   sizePosterCustomizePreviewClone(clone);
 }
 
@@ -143,6 +150,20 @@ function isPosterCustomizerEventInsideCard(event, card) {
   return event.target instanceof Node && card.contains(event.target);
 }
 
+function resolvePosterAssetSrc(src) {
+  if (!src || src.startsWith("data:") || src.startsWith("blob:")) return src || "";
+  try {
+    return new URL(encodeURI(src), document.baseURI).href;
+  } catch (error) {
+    return src;
+  }
+}
+
+function getPosterThumbnailSrc(src) {
+  if (!src || src.includes("/thumbs/")) return src || "";
+  return src.replace(/(^|\/)assets\/img\//, "$1assets/img/thumbs/");
+}
+
 function generatePoster(films) {
   const grid = document.getElementById("posterGrid");
   const requestedCount = Number(posterCountSelect?.value || 100);
@@ -152,15 +173,20 @@ function generatePoster(films) {
   if (posterPreviewViewport) {
     posterPreviewViewport.dataset.posterLayout = String(safeCount);
   }
+  poster.dataset.posterLayout = String(safeCount);
 
   const layoutByCount = {
-    25: { cols: 5, gap: 8 },
-    48: { cols: 6, gap: 12 },
-    100: { cols: 8, gap: 6 },
+    25: { cols: 5, gap: 18 },
+    48: { cols: 6, gap: 14 },
+    100: { cols: 10, gap: 7 },
   };
   const currentLayout = layoutByCount[safeCount] || layoutByCount[100];
   const cols = currentLayout.cols;
-  const rows = Math.ceil(safeCount / cols);
+  const filmsToShow = (Array.isArray(films) ? films : [])
+    .filter((film) => film?.image)
+    .slice(0, safeCount);
+  const displayCount = filmsToShow.length;
+  const rows = Math.max(1, Math.ceil(displayCount / cols));
 
   poster.classList.toggle("poster-sheet--fill-movie-grid", safeCount === 48);
 
@@ -193,12 +219,13 @@ function generatePoster(films) {
   applyPosterTypographyFromEditor();
   applyTitleSubtitleFormatClasses();
 
-  const filmsToShow = films.slice(0, safeCount);
-  const remainder = safeCount % cols;
-  const mainCount = remainder === 0 ? safeCount : safeCount - remainder;
+  const remainder = displayCount % cols;
+  const mainCount = remainder === 0 ? displayCount : displayCount - remainder;
   const shouldAnimateCards = safeCount < 100;
 
   function appendFilmCard(f, i, parent) {
+    if (!f?.image) return null;
+
     const card = document.createElement("div");
     card.className = "poster-film";
     if (shouldAnimateCards) {
@@ -207,9 +234,30 @@ function generatePoster(films) {
     }
 
     const img = document.createElement("img");
-    img.src = f.image;
+    const originalImageSrc = resolvePosterAssetSrc(f.image);
+    const preferredImageSrc = resolvePosterAssetSrc(
+      safeCount === 100 ? getPosterThumbnailSrc(f.image) : f.image
+    );
+    img.src = preferredImageSrc;
+    if (preferredImageSrc !== originalImageSrc) {
+      img.dataset.fallbackSrc = originalImageSrc;
+    }
     img.alt = "";
     img.decoding = "async";
+    img.loading = "eager";
+    img.addEventListener(
+      "error",
+      () => {
+        if (img.dataset.fallbackSrc) {
+          img.src = img.dataset.fallbackSrc;
+          delete img.dataset.fallbackSrc;
+          return;
+        }
+        card.classList.add("poster-film--image-error");
+        console.warn("Image poster introuvable ou non décodable :", f.image);
+      },
+      { passive: true }
+    );
     protectImageElement(img);
 
     const info = document.createElement("div");
@@ -219,21 +267,24 @@ function generatePoster(films) {
     titleEl.className = "film-title";
     titleEl.textContent = f.titre;
     titleEl.title = f.titre;
-    info.appendChild(titleEl);
 
     const yearEl = document.createElement("div");
     yearEl.className = "film-year";
     yearEl.textContent = f.year || "";
-    info.appendChild(yearEl);
 
     const circle = document.createElement("img");
     circle.className = "film-circle";
-    circle.src = "./assets/site/circle.png";
+    circle.src = resolvePosterAssetSrc(
+      posterTextCustomizer?.getState()?.filmCircleSrc || "./assets/site/circle.png"
+    );
     circle.alt = "";
     circle.decoding = "async";
+    circle.loading = "eager";
     protectImageElement(circle);
 
     info.appendChild(circle);
+    info.appendChild(titleEl);
+    info.appendChild(yearEl);
     card.appendChild(img);
     card.appendChild(info);
 
@@ -295,40 +346,13 @@ function collectPosterFilmCardsForBandHeight(grid) {
 
 function syncPosterHeaderFooterBandHeight(measuredCards) {
   const posterEl = document.getElementById("posterContainer");
-  const grid = document.getElementById("posterGrid");
-  if (!posterEl || !grid || posterWorkspace.style.display === "none") return;
-
-  const cards = measuredCards || collectPosterFilmCardsForBandHeight(grid);
-  if (!cards.length) {
-    posterEl.style.removeProperty("--poster-band-height");
-    posterEl.removeAttribute("data-band-synced");
-    return;
-  }
-
-  let prevApplied = -2;
-  for (let step = 0; step < 12; step++) {
-    let maxH = 0;
-    for (const el of cards) {
-      maxH = Math.max(maxH, el.offsetHeight);
-    }
-    if (maxH < 8) return;
-
-    const rounded = Math.round(maxH);
-    if (rounded === prevApplied) break;
-    prevApplied = rounded;
-
-    posterEl.style.setProperty("--poster-band-height", `${rounded}px`);
-    posterEl.dataset.bandSynced = "true";
-    void posterEl.offsetHeight;
-  }
+  if (!posterEl) return;
+  posterEl.style.removeProperty("--poster-band-height");
+  posterEl.removeAttribute("data-band-synced");
 }
 
 function syncPosterLayoutMetrics() {
-  const grid = document.getElementById("posterGrid");
-  const cards = grid ? collectPosterFilmCardsForBandHeight(grid) : [];
-  syncPosterHeaderFooterBandHeight(cards);
   fitPosterFilmTitles();
-  syncPosterHeaderFooterBandHeight(cards);
   syncPosterPreviewSlotSize();
 }
 
@@ -448,12 +472,6 @@ function refreshPosterLargePreview() {
     clone = posterEl.cloneNode(true);
     stripIdsFromElement(clone);
     clone.classList.add("poster-large-preview-clone");
-    if (!clone.style.backgroundImage) {
-      clone.style.backgroundImage = 'url("assets/img/backgrounds/bg.png")';
-      clone.style.backgroundRepeat = "no-repeat";
-      clone.style.backgroundPosition = "center";
-      clone.style.backgroundSize = "100% 100%";
-    }
     content.appendChild(clone);
   }
 
@@ -502,7 +520,7 @@ async function addPosterToCart() {
   const requestedCount = Number(posterCountSelect?.value || 100);
   const allowedCounts = [25, 48, 100];
   const safeCount = allowedCounts.includes(requestedCount) ? requestedCount : 100;
-  const filmsToShow = currentFilms.slice(0, safeCount);
+  const filmsToShow = currentFilms.filter((film) => film?.image).slice(0, safeCount);
 
   if (!filmsToShow.length) return;
 
@@ -518,18 +536,7 @@ async function addPosterToCart() {
     })),
   };
 
-  setPosterCartFeedback("Préparation du rendu...");
-
-  try {
-    const renderer = window.MppPosterJpeg || (await window.loadMppPosterJpeg?.());
-    cartItem.posterImage = await renderer?.createPosterJpeg(cartItem, {
-      width: 1500,
-      quality: 0.88,
-    });
-    cartItem.posterImageVersion = renderer?.RENDERER_VERSION || 1;
-  } catch (error) {
-    console.warn("Impossible de générer le JPEG du poster.", error);
-  }
+  setPosterCartFeedback("Ajout au panier...");
 
   try {
     const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
@@ -537,16 +544,7 @@ async function addPosterToCart() {
     localStorage.setItem("mppCart", JSON.stringify(existingCart));
     window.updateMppCartIndicator?.();
   } catch (error) {
-    console.warn("Impossible d'enregistrer le panier local avec le JPEG.", error);
-    delete cartItem.posterImage;
-    try {
-      const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
-      existingCart.push(cartItem);
-      localStorage.setItem("mppCart", JSON.stringify(existingCart));
-      window.updateMppCartIndicator?.();
-    } catch (fallbackError) {
-      console.warn("Impossible d'enregistrer le panier local.", fallbackError);
-    }
+    console.warn("Impossible d'enregistrer le panier local.", error);
   }
 
   setPosterCartFeedback("Poster ajouté au panier.");
@@ -579,7 +577,10 @@ function bindPosterEditor() {
       subtitleSize: DEFAULT_SUBTITLE_FONT_SIZE_PX,
       titleColor: DEFAULT_TITLE_COLOR,
       subtitleColor: DEFAULT_SUBTITLE_COLOR,
-      backgroundImage: "assets/img/backgrounds/bg.png",
+      filmTitleColor: "#31343c",
+      filmYearColor: "#5c606b",
+      filmCircleSrc: "./assets/site/circle.png",
+      backgroundImage: "",
     },
     controls: {
       titleInput: titleEditorInput,
@@ -592,6 +593,9 @@ function bindPosterEditor() {
       subtitleSizeLabel: subtitleFontSizeValue,
       titleColorInput,
       subtitleColorInput,
+      filmTitleColorInput,
+      filmYearColorInput,
+      filmCircleSelect,
       backgroundSelect: "posterBackgroundSelect",
       backgroundUpload: "posterBackgroundUpload",
       resetButton: resetPosterTextBtn,
@@ -607,7 +611,6 @@ function bindPosterEditor() {
       subtitle: () => document.getElementById("posterSubtitle"),
     },
     onChange: () => {
-      schedulePosterLayoutMetrics();
       schedulePosterCustomizePreview();
     },
   });

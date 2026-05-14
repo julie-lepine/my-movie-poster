@@ -24,6 +24,9 @@
       subtitleSize: Number(defaults.subtitleSize) || 0,
       titleColor: defaults.titleColor || "",
       subtitleColor: defaults.subtitleColor || "",
+      filmTitleColor: defaults.filmTitleColor || "",
+      filmYearColor: defaults.filmYearColor || "",
+      filmCircleSrc: defaults.filmCircleSrc || "",
       backgroundImage: defaults.backgroundImage || "",
       titleFormat: cloneFormat(defaults.titleFormat),
       subtitleFormat: cloneFormat(defaults.subtitleFormat),
@@ -36,6 +39,35 @@
       titleFormat: cloneFormat(state.titleFormat),
       subtitleFormat: cloneFormat(state.subtitleFormat),
     };
+  }
+
+  function getChangedKeys(previous, next) {
+    const keys = [
+      "title",
+      "subtitle",
+      "titleFont",
+      "subtitleFont",
+      "titleSize",
+      "subtitleSize",
+      "titleColor",
+      "subtitleColor",
+      "filmTitleColor",
+      "filmYearColor",
+      "filmCircleSrc",
+      "backgroundImage",
+    ];
+    const changed = keys.filter((key) => previous[key] !== next[key]);
+
+    FORMAT_KEYS.forEach((key) => {
+      if (previous.titleFormat[key] !== next.titleFormat[key]) {
+        changed.push("titleFormat");
+      }
+      if (previous.subtitleFormat[key] !== next.subtitleFormat[key]) {
+        changed.push("subtitleFormat");
+      }
+    });
+
+    return [...new Set(changed)];
   }
 
   function resolveElement(ref) {
@@ -129,6 +161,9 @@
       writeControl(controls.subtitleSizeInput, String(state.subtitleSize));
       writeControl(controls.titleColorInput, state.titleColor);
       writeControl(controls.subtitleColorInput, state.subtitleColor);
+      writeControl(controls.filmTitleColorInput, state.filmTitleColor);
+      writeControl(controls.filmYearColorInput, state.filmYearColor);
+      writeControl(controls.filmCircleSelect, state.filmCircleSrc);
       writeControl(controls.backgroundSelect, state.backgroundImage);
       const backgroundUpload = resolveElement(controls.backgroundUpload);
       if (backgroundUpload) backgroundUpload.value = "";
@@ -143,22 +178,27 @@
       state.subtitleFont = readControl(controls.subtitleFontSelect, state.subtitleFont);
       state.titleColor = readControl(controls.titleColorInput, state.titleColor);
       state.subtitleColor = readControl(controls.subtitleColorInput, state.subtitleColor);
+      state.filmTitleColor = readControl(controls.filmTitleColorInput, state.filmTitleColor);
+      state.filmYearColor = readControl(controls.filmYearColorInput, state.filmYearColor);
+      state.filmCircleSrc = readControl(controls.filmCircleSelect, state.filmCircleSrc);
       state.titleSize =
         Number(readControl(controls.titleSizeInput, state.titleSize)) || defaults.titleSize || 0;
       state.subtitleSize =
         Number(readControl(controls.subtitleSizeInput, state.subtitleSize)) ||
         defaults.subtitleSize ||
         0;
-      const selectedBackground = readControl(controls.backgroundSelect, "");
-      if (selectedBackground) state.backgroundImage = selectedBackground;
+      const backgroundSelect = resolveElement(controls.backgroundSelect);
+      if (backgroundSelect) state.backgroundImage = backgroundSelect.value;
       syncLabels();
     }
 
-    function apply() {
+    function apply(changedKeys) {
       const title = resolveElement(targets.title);
       const subtitle = resolveElement(targets.subtitle);
       const root = resolveElement(targets.root);
       const background = resolveElement(targets.background || targets.root);
+      const changed = new Set(changedKeys || []);
+      const shouldApplyAll = !changedKeys;
 
       if (title) {
         title.textContent = state.title.trim() || defaults.title || "";
@@ -176,6 +216,12 @@
         if (state.subtitleColor) {
           root.style.setProperty("--poster-subtitle-color", state.subtitleColor);
         }
+        if (state.filmTitleColor) {
+          root.style.setProperty("--poster-film-title-color", state.filmTitleColor);
+        }
+        if (state.filmYearColor) {
+          root.style.setProperty("--poster-film-year-color", state.filmYearColor);
+        }
         if (state.titleSize > 0) {
           root.style.setProperty("--poster-title-font-size", `${state.titleSize}px`);
         } else {
@@ -188,6 +234,11 @@
         }
         if (title) setFormatClasses(title, state.titleFormat);
         if (subtitle) setFormatClasses(subtitle, state.subtitleFormat);
+        if ((shouldApplyAll || changed.has("filmCircleSrc")) && state.filmCircleSrc) {
+          root.querySelectorAll(".film-circle").forEach((circle) => {
+            circle.src = state.filmCircleSrc;
+          });
+        }
       }
 
       if (targets.mode === "inline") {
@@ -198,23 +249,28 @@
       setBackgroundImage(background, state.backgroundImage);
     }
 
-    function notifyChange() {
+    function notifyChange(changedKeys) {
       if (typeof config.onChange === "function") {
-        config.onChange(api);
+        config.onChange(api, { changedKeys: changedKeys || [] });
       }
     }
 
     function updateFromControls() {
+      const previous = cloneState(state);
       readControls();
-      apply();
-      notifyChange();
+      const changedKeys = getChangedKeys(previous, state);
+      if (!changedKeys.length) return;
+      apply(changedKeys);
+      notifyChange(changedKeys);
     }
 
     function reset() {
+      const previous = cloneState(state);
       Object.assign(state, createState(defaults));
       writeControls();
-      apply();
-      notifyChange();
+      const changedKeys = getChangedKeys(previous, state);
+      apply(changedKeys);
+      notifyChange(changedKeys);
     }
 
     function readUploadedBackground(file) {
@@ -225,8 +281,8 @@
         state.backgroundImage = String(reader.result || "");
         const backgroundSelect = resolveElement(controls.backgroundSelect);
         if (backgroundSelect) backgroundSelect.value = "";
-        apply();
-        notifyChange();
+        apply(["backgroundImage"]);
+        notifyChange(["backgroundImage"]);
       });
       reader.readAsDataURL(file);
     }
@@ -239,6 +295,9 @@
         controls.subtitleFontSelect,
         controls.titleColorInput,
         controls.subtitleColorInput,
+        controls.filmTitleColorInput,
+        controls.filmYearColorInput,
+        controls.filmCircleSelect,
         controls.titleSizeInput,
         controls.subtitleSizeInput,
         controls.backgroundSelect,
@@ -262,8 +321,8 @@
           titleButton.addEventListener("click", () => {
             state.titleFormat[key] = !state.titleFormat[key];
             syncToolbar();
-            apply();
-            notifyChange();
+            apply(["titleFormat"]);
+            notifyChange(["titleFormat"]);
           });
         }
 
@@ -272,8 +331,8 @@
           subtitleButton.addEventListener("click", () => {
             state.subtitleFormat[key] = !state.subtitleFormat[key];
             syncToolbar();
-            apply();
-            notifyChange();
+            apply(["subtitleFormat"]);
+            notifyChange(["subtitleFormat"]);
           });
         }
       });

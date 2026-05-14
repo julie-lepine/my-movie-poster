@@ -453,18 +453,7 @@ async function addGallerySelectionToCart() {
     })),
   };
 
-  setGalleryCartFeedback("Préparation du rendu...");
-
-  try {
-    const renderer = window.MppPosterJpeg || (await window.loadMppPosterJpeg?.());
-    cartItem.posterImage = await renderer?.createPosterJpeg(cartItem, {
-      width: 1400,
-      quality: 0.88,
-    });
-    cartItem.posterImageVersion = renderer?.RENDERER_VERSION || 1;
-  } catch (error) {
-    console.warn("Impossible de générer le JPEG du poster.", error);
-  }
+  setGalleryCartFeedback("Ajout au panier...");
 
   try {
     const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
@@ -472,16 +461,7 @@ async function addGallerySelectionToCart() {
     localStorage.setItem("mppCart", JSON.stringify(existingCart));
     window.updateMppCartIndicator?.();
   } catch (error) {
-    console.warn("Impossible d'enregistrer le panier local avec le JPEG.", error);
-    delete cartItem.posterImage;
-    try {
-      const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
-      existingCart.push(cartItem);
-      localStorage.setItem("mppCart", JSON.stringify(existingCart));
-      window.updateMppCartIndicator?.();
-    } catch (fallbackError) {
-      console.warn("Impossible d'enregistrer le panier local.", fallbackError);
-    }
+    console.warn("Impossible d'enregistrer le panier local.", error);
   }
 
   setGalleryCartFeedback("Poster ajouté au panier.");
@@ -508,7 +488,7 @@ function setupGalleryCustomizer() {
       subtitleSize: 11,
       titleColor: "#25272d",
       subtitleColor: "#5c606b",
-      backgroundImage: "assets/img/backgrounds/bg.png",
+      backgroundImage: "",
     },
     controls: {
       titleInput: "galleryTitleInput",

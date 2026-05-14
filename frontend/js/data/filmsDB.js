@@ -195,7 +195,7 @@ const filmsDB = [
     year: 2003,
     image: "./assets/img/Good Bye, Lenin !.jpg",
     tags: ["amour", "emotion", "dynamique", "aventure"],
-    genre: ["Comédie", "Drame, Romance"],
+    genre: ["Comédie", "Drame", "Romance"],
     realisateur: "Wolfgang Becker",
     couleurs: ["white", "green"],
   },
@@ -407,7 +407,7 @@ const filmsDB = [
     couleurs: ["red", "white", "yellow"],
   },
   {
-    titre: "La vie est belle (1946)",
+    titre: "La vie est belle",
     year: 1946,
     image: "./assets/img/La Vie est Belle (1946).jpg",
     tags: ["sombre", "nature", "soleil", "psychologique"],
@@ -416,7 +416,7 @@ const filmsDB = [
     couleurs: ["purple"],
   },
   {
-    titre: "La vie est belle (1997)",
+    titre: "La vie est belle",
     year: 1997,
     image: "./assets/img/La Vie est Belle (1997).jpg",
     tags: ["soleil", "psychologique", "imaginaire", "renouveau"],
@@ -767,7 +767,7 @@ const filmsDB = [
     couleurs: ["green", "beige"],
   },
   {
-    titre: "Sherlock Holmes (2009)",
+    titre: "Sherlock Holmes",
     year: 2009,
     image: "./assets/img/sherlock holmes (2009).jpg",
     tags: ["melancolie", "sombre", "nature", "soleil"],
