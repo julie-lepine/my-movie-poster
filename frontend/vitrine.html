@@ -17,7 +17,7 @@
   <div class="site-topbar" aria-label="Navigation secondaire">
     <div class="site-account-links" style="margin-left: auto;">
       <a href="#">Inscription / Connexion</a>
-      <a href="#">Panier</a>
+      <a href="panier.html">Panier</a>
     </div>
   </div>
   <nav class="site-nav">
@@ -67,19 +67,125 @@
           <span>Recherche</span>
           <input id="gallerySearchInput" type="search" placeholder="Titre du film" autocomplete="off" />
         </label>
+
+        <div class="gallery-filter-actions">
+          <button id="gallerySelectFiltered" class="gallery-select-filtered" type="button">
+            Tout sélectionner
+          </button>
+        </div>
       </form>
     </div>
 
-    <div id="galleryGrid" class="gallery-grid" aria-live="polite"></div>
+    <div class="gallery-layout">
+      <div class="gallery-results">
+        <div id="galleryGrid" class="gallery-grid" aria-live="polite"></div>
 
-    <button id="galleryLoadMore" class="gallery-load-more" type="button" aria-label="Charger 10 posters de plus">
-      <span aria-hidden="true"></span>
-    </button>
+        <button id="galleryLoadMore" class="gallery-load-more" type="button" aria-label="Charger 10 posters de plus">
+          <span aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <aside class="gallery-selection-panel" aria-label="Sélection de films">
+        <div class="gallery-selection-poster">
+          <header class="gallery-selection-header">
+            <strong id="gallerySelectionTitle">Ma sélection</strong>
+            <span id="gallerySelectionSubtitle">Création personnalisée</span>
+          </header>
+          <div id="gallerySelectionGrid" class="gallery-selection-grid" aria-live="polite">
+            <p class="gallery-selection-empty">Coche des films pour composer ton poster.</p>
+          </div>
+          <footer class="gallery-selection-footer" aria-label="Marque">
+            <img src="./assets/site/logo.png" alt="My Movies Poster" />
+          </footer>
+        </div>
+        <p id="gallerySelectionCount" class="gallery-selection-count">0 film sélectionné</p>
+        <button id="galleryCustomizeOpen" class="gallery-customize-open" type="button" aria-controls="galleryCustomizeModal">
+          Personnaliser
+        </button>
+        <button id="galleryClearSelection" class="gallery-clear-selection" type="button" disabled>
+          Désélectionner la sélection
+        </button>
+      </aside>
+    </div>
   </section>
 
   <div id="galleryLightbox" class="gallery-lightbox" hidden role="dialog" aria-modal="true" aria-label="Aperçu du poster">
     <button id="galleryLightboxClose" class="gallery-lightbox-close" type="button" aria-label="Fermer l'aperçu">×</button>
     <article id="galleryLightboxCard" class="gallery-lightbox-card"></article>
+  </div>
+
+  <div id="galleryCustomizeModal" class="gallery-customize-modal" hidden role="dialog" aria-modal="true" aria-labelledby="galleryCustomizeTitle">
+    <div class="gallery-customize-card poster-editor">
+      <button id="galleryCustomizeClose" class="gallery-customize-close" type="button" aria-label="Fermer la personnalisation">×</button>
+      <h3 id="galleryCustomizeTitle">Personnaliser</h3>
+
+      <label for="galleryTitleInput"><strong>Titre</strong></label>
+      <input id="galleryTitleInput" type="text" value="Ma sélection" autocomplete="off" spellcheck="false" />
+
+      <label for="galleryTitleFontSelect">Police du titre</label>
+      <select id="galleryTitleFontSelect">
+        <option value="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" selected>Système</option>
+        <option value="'Montserrat', system-ui, sans-serif">Montserrat</option>
+        <option value="'Playfair Display', Georgia, serif">Playfair Display</option>
+        <option value="'Bebas Neue', Impact, sans-serif">Bebas Neue</option>
+        <option value="'Oswald', 'Arial Narrow', sans-serif">Oswald</option>
+        <option value="Georgia, 'Times New Roman', serif">Georgia</option>
+      </select>
+
+      <label for="galleryTitleSizeInput">Taille du titre <span id="galleryTitleSizeValue">24</span> px</label>
+      <input id="galleryTitleSizeInput" class="poster-editor-range" type="range" min="12" max="44" value="24" step="1" />
+
+      <label for="galleryTitleColorInput">Couleur du titre</label>
+      <input id="galleryTitleColorInput" class="poster-editor-color" type="color" value="#25272d" />
+
+      <div class="poster-editor-toolbar" role="group" aria-label="Style du titre">
+        <span class="poster-editor-toolbar-label">Style du titre</span>
+        <button type="button" class="poster-editor-fmt-btn" data-gallery-format-scope="title" data-gallery-format="bold" aria-pressed="false" title="Gras">G</button>
+        <button type="button" class="poster-editor-fmt-btn" data-gallery-format-scope="title" data-gallery-format="italic" aria-pressed="false" title="Italique">I</button>
+        <button type="button" class="poster-editor-fmt-btn" data-gallery-format-scope="title" data-gallery-format="strike" aria-pressed="false" title="Barré">R</button>
+      </div>
+
+      <label for="gallerySubtitleInput"><strong>Sous-titre</strong></label>
+      <input id="gallerySubtitleInput" type="text" value="Création personnalisée" autocomplete="off" spellcheck="false" />
+
+      <label for="gallerySubtitleFontSelect">Police du sous-titre</label>
+      <select id="gallerySubtitleFontSelect">
+        <option value="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" selected>Système</option>
+        <option value="'Montserrat', system-ui, sans-serif">Montserrat</option>
+        <option value="'Playfair Display', Georgia, serif">Playfair Display</option>
+        <option value="'Bebas Neue', Impact, sans-serif">Bebas Neue</option>
+        <option value="'Oswald', 'Arial Narrow', sans-serif">Oswald</option>
+        <option value="Georgia, 'Times New Roman', serif">Georgia</option>
+      </select>
+
+      <label for="gallerySubtitleSizeInput">Taille du sous-titre <span id="gallerySubtitleSizeValue">11</span> px</label>
+      <input id="gallerySubtitleSizeInput" class="poster-editor-range" type="range" min="8" max="28" value="11" step="1" />
+
+      <label for="gallerySubtitleColorInput">Couleur du sous-titre</label>
+      <input id="gallerySubtitleColorInput" class="poster-editor-color" type="color" value="#5c606b" />
+
+      <div class="poster-editor-toolbar" role="group" aria-label="Style du sous-titre">
+        <span class="poster-editor-toolbar-label">Style du sous-titre</span>
+        <button type="button" class="poster-editor-fmt-btn" data-gallery-format-scope="subtitle" data-gallery-format="bold" aria-pressed="false" title="Gras">G</button>
+        <button type="button" class="poster-editor-fmt-btn" data-gallery-format-scope="subtitle" data-gallery-format="italic" aria-pressed="false" title="Italique">I</button>
+        <button type="button" class="poster-editor-fmt-btn" data-gallery-format-scope="subtitle" data-gallery-format="strike" aria-pressed="false" title="Barré">R</button>
+      </div>
+
+      <label for="galleryBackgroundSelect"><strong>Fond d'écran</strong></label>
+      <select id="galleryBackgroundSelect">
+        <option value="assets/img/backgrounds/bg.png" selected>Fond 1</option>
+        <option value="assets/img/backgrounds/bg2.png">Fond 2</option>
+        <option value="assets/img/backgrounds/bg3.png">Fond 3</option>
+        <option value="assets/img/backgrounds/bg4.png">Fond 4</option>
+      </select>
+
+      <label for="galleryBackgroundUpload">Charger un fond depuis mon appareil</label>
+      <input id="galleryBackgroundUpload" class="poster-editor-file" type="file" accept="image/*" />
+
+      <button id="galleryResetCustomization" type="button">Réinitialiser texte</button>
+      <button id="galleryAddToCart" class="gallery-add-to-cart" type="button" disabled>Ajouter au panier</button>
+      <p id="galleryCartFeedback" class="gallery-cart-feedback" aria-live="polite"></p>
+    </div>
   </div>
 </main>
 
@@ -125,6 +231,7 @@
 
 <script src="js/common.js"></script>
 <script src="js/data/filmsDB.js"></script>
+<script src="js/core/text-customizer.js"></script>
 <script src="js/pages/vitrine.js"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@
   <div class="site-topbar" aria-label="Navigation secondaire">
     <div class="site-account-links" style="margin-left: auto;">
       <a href="#">Inscription / Connexion</a>
-      <a href="#">Panier</a>
+      <a href="panier.html">Panier</a>
     </div>
   </div>
   <nav class="site-nav">
@@ -120,7 +120,6 @@
         <span class="poster-editor-toolbar-label">Style du titre</span>
         <button type="button" class="poster-editor-fmt-btn" id="titleFmtBold" aria-pressed="false" title="Gras">G</button>
         <button type="button" class="poster-editor-fmt-btn" id="titleFmtItalic" aria-pressed="false" title="Italique">I</button>
-        <button type="button" class="poster-editor-fmt-btn" id="titleFmtUnderline" aria-pressed="false" title="Souligné">U</button>
         <button type="button" class="poster-editor-fmt-btn" id="titleFmtStrike" aria-pressed="false" title="Barré">R</button>
       </div>
 
@@ -147,11 +146,23 @@
         <span class="poster-editor-toolbar-label">Style du sous-titre</span>
         <button type="button" class="poster-editor-fmt-btn" id="subtitleFmtBold" aria-pressed="false" title="Gras">G</button>
         <button type="button" class="poster-editor-fmt-btn" id="subtitleFmtItalic" aria-pressed="false" title="Italique">I</button>
-        <button type="button" class="poster-editor-fmt-btn" id="subtitleFmtUnderline" aria-pressed="false" title="Souligné">U</button>
         <button type="button" class="poster-editor-fmt-btn" id="subtitleFmtStrike" aria-pressed="false" title="Barré">R</button>
       </div>
 
+      <label for="posterBackgroundSelect"><strong>Fond d'écran</strong></label>
+      <select id="posterBackgroundSelect">
+        <option value="assets/img/backgrounds/bg.png" selected>Fond 1</option>
+        <option value="assets/img/backgrounds/bg2.png">Fond 2</option>
+        <option value="assets/img/backgrounds/bg3.png">Fond 3</option>
+        <option value="assets/img/backgrounds/bg4.png">Fond 4</option>
+      </select>
+
+      <label for="posterBackgroundUpload">Charger un fond depuis mon appareil</label>
+      <input id="posterBackgroundUpload" class="poster-editor-file" type="file" accept="image/*" />
+
       <button id="resetPosterText" type="button">Réinitialiser texte</button>
+      <button id="posterAddToCart" class="poster-add-to-cart" type="button">Ajouter au panier</button>
+      <p id="posterCartFeedback" class="poster-cart-feedback" aria-live="polite"></p>
       </div>
     </div>
   </div>
@@ -204,6 +215,7 @@
 <script src="js/state/mpp-defaults.js"></script>
 <script src="js/core/mapping.js"></script>
 <script src="js/core/mpp-dom.js"></script>
+<script src="js/core/text-customizer.js"></script>
 <script src="js/core/recommend.js"></script>
 <script src="js/poster/poster.js"></script>
 <script src="js/pages/poster-page.js"></script>

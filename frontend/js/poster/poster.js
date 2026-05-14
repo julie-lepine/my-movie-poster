@@ -463,154 +463,116 @@ function setupPosterMagnifier() {
   });
 }
 
+var posterTextCustomizer = null;
+
+function syncPosterTextCustomization() {
+  posterTextCustomizer?.apply();
+}
+
 function syncPosterFormatToolbar() {
-  for (const key of ["bold", "italic", "underline", "strike"]) {
-    const tBtn = document.getElementById(TITLE_FMT_BTN[key]);
-    if (tBtn) {
-      const on = titleTextFormat[key];
-      tBtn.setAttribute("aria-pressed", String(on));
-      tBtn.classList.toggle("is-active", on);
-    }
-    const sBtn = document.getElementById(SUBTITLE_FMT_BTN[key]);
-    if (sBtn) {
-      const on = subtitleTextFormat[key];
-      sBtn.setAttribute("aria-pressed", String(on));
-      sBtn.classList.toggle("is-active", on);
-    }
-  }
+  posterTextCustomizer?.syncToolbar();
 }
 
 function applyTitleSubtitleFormatClasses() {
-  const titleEl = document.getElementById("posterTitle");
-  const subEl = document.getElementById("posterSubtitle");
-  if (titleEl) {
-    titleEl.classList.toggle("is-editor-bold", titleTextFormat.bold);
-    titleEl.classList.toggle("is-editor-italic", titleTextFormat.italic);
-    titleEl.classList.toggle("is-editor-underline", titleTextFormat.underline);
-    titleEl.classList.toggle("is-editor-strike", titleTextFormat.strike);
-  }
-  if (subEl) {
-    subEl.classList.toggle("is-editor-bold", subtitleTextFormat.bold);
-    subEl.classList.toggle("is-editor-italic", subtitleTextFormat.italic);
-    subEl.classList.toggle("is-editor-underline", subtitleTextFormat.underline);
-    subEl.classList.toggle("is-editor-strike", subtitleTextFormat.strike);
-  }
+  syncPosterTextCustomization();
 }
 
 function syncPosterFontSizeLabels() {
-  if (titleFontSizeValue && titleFontSizeInput) {
-    titleFontSizeValue.textContent = titleFontSizeInput.value;
-  }
-  if (subtitleFontSizeValue && subtitleFontSizeInput) {
-    subtitleFontSizeValue.textContent = subtitleFontSizeInput.value;
-  }
+  posterTextCustomizer?.syncLabels();
 }
 
 function applyPosterTypographyFromEditor() {
-  const el = document.getElementById("posterContainer");
-  if (!el) return;
+  syncPosterTextCustomization();
+}
 
-  const tf = titleFontSelect?.value?.trim();
-  const sf = subtitleFontSelect?.value?.trim();
-  const tc = titleColorInput?.value?.trim();
-  const sc = subtitleColorInput?.value?.trim();
+function addPosterToCart() {
+  const feedback = document.getElementById("posterCartFeedback");
+  const requestedCount = Number(posterCountSelect?.value || 100);
+  const allowedCounts = [25, 48, 100];
+  const safeCount = allowedCounts.includes(requestedCount) ? requestedCount : 100;
+  const filmsToShow = currentFilms.slice(0, safeCount);
 
-  if (tf) el.style.setProperty("--poster-title-font", tf);
-  if (sf) el.style.setProperty("--poster-subtitle-font", sf);
-  if (tc) el.style.setProperty("--poster-title-color", tc);
-  if (sc) el.style.setProperty("--poster-subtitle-color", sc);
+  if (!filmsToShow.length) return;
 
-  const titlePx = parseInt(titleFontSizeInput?.value, 10);
-  const subPx = parseInt(subtitleFontSizeInput?.value, 10);
-  if (Number.isFinite(titlePx) && titlePx > 0) {
-    el.style.setProperty("--poster-title-font-size", `${titlePx}px`);
-  } else {
-    el.style.removeProperty("--poster-title-font-size");
+  const cartItem = {
+    type: "quiz-poster",
+    addedAt: new Date().toISOString(),
+    customization: posterTextCustomizer?.getState() || {},
+    layoutCount: safeCount,
+    films: filmsToShow.map((film) => ({
+      titre: film.titre,
+      year: film.year,
+      image: film.image,
+    })),
+  };
+
+  try {
+    const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
+    existingCart.push(cartItem);
+    localStorage.setItem("mppCart", JSON.stringify(existingCart));
+  } catch (error) {
+    console.warn("Impossible d'enregistrer le panier local.", error);
   }
-  if (Number.isFinite(subPx) && subPx > 0) {
-    el.style.setProperty("--poster-subtitle-font-size", `${subPx}px`);
-  } else {
-    el.style.removeProperty("--poster-subtitle-font-size");
+
+  if (feedback) {
+    feedback.textContent = `${filmsToShow.length} film${filmsToShow.length > 1 ? "s" : ""} ajouté${
+      filmsToShow.length > 1 ? "s" : ""
+    } au panier.`;
   }
 }
 
 function bindPosterEditor() {
-  const renderCurrentEditorValues = () => {
-    const titleNode = document.getElementById("posterTitle");
-    if (titleNode) {
-      titleNode.textContent = titleEditorInput.value.trim() || DEFAULT_TITLE;
-    }
-
-    const subtitleNode = document.getElementById("posterSubtitle");
-    if (subtitleNode) {
-      subtitleNode.textContent =
-        subtitleEditorInput.value.trim() || DEFAULT_SUBTITLE;
-    }
-    applyPosterTypographyFromEditor();
-    applyTitleSubtitleFormatClasses();
-  };
-
-  const bump = () => {
-    renderCurrentEditorValues();
-    syncPosterFormatToolbar();
-    scheduleMagnifierCloneRefresh();
-  };
-
-  titleEditorInput.addEventListener("input", bump);
-  subtitleEditorInput.addEventListener("input", bump);
-  titleFontSelect?.addEventListener("change", bump);
-  subtitleFontSelect?.addEventListener("change", bump);
-  titleColorInput?.addEventListener("input", bump);
-  subtitleColorInput?.addEventListener("input", bump);
-
-  function onFontSizeInput() {
-    syncPosterFontSizeLabels();
-    applyPosterTypographyFromEditor();
-    scheduleMagnifierCloneRefresh();
-  }
-  titleFontSizeInput?.addEventListener("input", onFontSizeInput);
-  subtitleFontSizeInput?.addEventListener("input", onFontSizeInput);
-
-  function wireFmtBtn(btnId, key, scope) {
-    const btn = document.getElementById(btnId);
-    if (!btn) return;
-    btn.addEventListener("click", () => {
-      const fmt = scope === "title" ? titleTextFormat : subtitleTextFormat;
-      fmt[key] = !fmt[key];
-      syncPosterFormatToolbar();
-      applyTitleSubtitleFormatClasses();
+  posterTextCustomizer = MppTextCustomizer.create({
+    defaults: {
+      title: DEFAULT_TITLE,
+      subtitle: DEFAULT_SUBTITLE,
+      titleFont: titleFontSelect?.value || "",
+      subtitleFont: subtitleFontSelect?.value || "",
+      titleSize: DEFAULT_TITLE_FONT_SIZE_PX,
+      subtitleSize: DEFAULT_SUBTITLE_FONT_SIZE_PX,
+      titleColor: DEFAULT_TITLE_COLOR,
+      subtitleColor: DEFAULT_SUBTITLE_COLOR,
+      backgroundImage: "assets/img/backgrounds/bg.png",
+    },
+    controls: {
+      titleInput: titleEditorInput,
+      subtitleInput: subtitleEditorInput,
+      titleFontSelect,
+      subtitleFontSelect,
+      titleSizeInput: titleFontSizeInput,
+      subtitleSizeInput: subtitleFontSizeInput,
+      titleSizeLabel: titleFontSizeValue,
+      subtitleSizeLabel: subtitleFontSizeValue,
+      titleColorInput,
+      subtitleColorInput,
+      backgroundSelect: "posterBackgroundSelect",
+      backgroundUpload: "posterBackgroundUpload",
+      resetButton: resetPosterTextBtn,
+      formatButtons: {
+        title: TITLE_FMT_BTN,
+        subtitle: SUBTITLE_FMT_BTN,
+      },
+    },
+    targets: {
+      mode: "cssVars",
+      root: () => document.getElementById("posterContainer"),
+      title: () => document.getElementById("posterTitle"),
+      subtitle: () => document.getElementById("posterSubtitle"),
+    },
+    onChange: () => {
       scheduleMagnifierCloneRefresh();
-    });
-  }
-  for (const key of ["bold", "italic", "underline", "strike"]) {
-    wireFmtBtn(TITLE_FMT_BTN[key], key, "title");
-    wireFmtBtn(SUBTITLE_FMT_BTN[key], key, "subtitle");
-  }
-
-  resetPosterTextBtn.addEventListener("click", () => {
-    titleEditorInput.value = DEFAULT_TITLE;
-    subtitleEditorInput.value = DEFAULT_SUBTITLE;
-    if (titleFontSelect) titleFontSelect.selectedIndex = 0;
-    if (subtitleFontSelect) subtitleFontSelect.selectedIndex = 0;
-    if (titleColorInput) titleColorInput.value = DEFAULT_TITLE_COLOR;
-    if (subtitleColorInput) subtitleColorInput.value = DEFAULT_SUBTITLE_COLOR;
-    if (titleFontSizeInput) titleFontSizeInput.value = String(DEFAULT_TITLE_FONT_SIZE_PX);
-    if (subtitleFontSizeInput) {
-      subtitleFontSizeInput.value = String(DEFAULT_SUBTITLE_FONT_SIZE_PX);
-    }
-    syncPosterFontSizeLabels();
-    for (const k of ["bold", "italic", "underline", "strike"]) {
-      titleTextFormat[k] = false;
-      subtitleTextFormat[k] = false;
-    }
-    bump();
+    },
   });
+
+  posterTextCustomizer.bind();
+  posterTextCustomizer.writeControls();
 
   posterCountSelect.addEventListener("change", () => {
     if (posterWorkspace.style.display !== "none" && currentFilms.length > 0) {
       generatePoster(currentFilms);
     }
   });
+  document.getElementById("posterAddToCart")?.addEventListener("click", addPosterToCart);
 
   syncPosterFormatToolbar();
   syncPosterFontSizeLabels();

@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Movies Poster</title>
+  <title>Panier - My Movies Poster</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,7 +21,7 @@
     </div>
   </div>
   <nav class="site-nav">
-    <a href="index.html" class="site-nav-link active">Accueil</a>
+    <a href="index.html" class="site-nav-link">Accueil</a>
     <a href="vitrine.html" class="site-nav-link">Vitrine</a>
     <img class="site-logo" src="./assets/site/logo.png" alt="My Movies Poster" />
     <a href="mon-poster.html" class="site-nav-link">Mon Poster</a>
@@ -31,53 +30,16 @@
 </header>
 
 <main class="page-content">
-  <section id="homePage" class="home-page">
-    <div class="home-hero">
-      <div class="home-copy">
-        <h1>My Movie Poster<br>C'est quoi ?</h1>
-        <p>
-          Compose ton affiche de cinéma personnalisée à partir de tes goûts, de tes
-          émotions et de ton univers visuel. Réponds au quiz, découvre une sélection
-          de films et transforme-la en poster prêt à afficher.
-        </p>
-        <p>
-          Chaque poster rassemble les films qui te ressemblent dans une mise en page
-          élégante, pensée pour l'impression et la décoration murale.
-        </p>
-        <a class="home-cta" href="mon-poster.html">Créer mon poster</a>
+  <section class="cart-page" aria-labelledby="cartTitle">
+    <header class="cart-header">
+      <div>
+        <h1 id="cartTitle">Panier</h1>
+        <p id="cartSummary">Tes posters ajoutés apparaîtront ici.</p>
       </div>
+      <button id="cartClearAll" class="cart-clear-all" type="button" hidden>Vider le panier</button>
+    </header>
 
-      <div class="home-poster-scene" aria-label="Exemple de poster personnalisé">
-        <div class="home-hanging-poster">
-          <div class="home-poster-title">Top 100 des films</div>
-          <div class="home-poster-subtitle">à voir avant de mourir</div>
-          <div class="home-mini-grid" aria-hidden="true"></div>
-          <img class="home-poster-brand" src="./assets/site/logo.png" alt="" />
-        </div>
-      </div>
-    </div>
-
-    <div class="home-gallery-row">
-      <div class="home-gallery">
-        <figure class="home-frame">
-          <img src="./assets/img/Interstellar.jpg" alt="Exemple d'affiche encadrée Interstellar" />
-        </figure>
-        <figure class="home-frame">
-          <img src="./assets/img/Inception.jpg" alt="Exemple d'affiche encadrée Inception" />
-        </figure>
-        <figure class="home-frame home-frame--graphic" aria-label="Exemple d'affiche graphique"></figure>
-      </div>
-      <div class="home-secondary-copy">
-        <p>
-          Le concept est simple : un poster clair, graphique et personnel, construit
-          autour d'une sélection de films culte et de recommandations adaptées.
-        </p>
-        <p>
-          Choisis le nombre d'images, personnalise le titre et prépare une affiche
-          qui raconte ton univers cinéma.
-        </p>
-      </div>
-    </div>
+    <div id="cartItems" class="cart-items" aria-live="polite"></div>
   </section>
 </main>
 
@@ -122,6 +84,6 @@
 </footer>
 
 <script src="js/common.js"></script>
-<script src="js/pages/home.js"></script>
+<script src="js/pages/cart.js"></script>
 </body>
 </html>

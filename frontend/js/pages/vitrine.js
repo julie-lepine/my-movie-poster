@@ -1,10 +1,14 @@
 const galleryState = {
   films: [],
   filteredFilms: [],
+  selectedFilms: [],
+  customization: null,
   visibleCount: 20,
   selectedColor: "",
   filtersOpen: true,
 };
+
+var galleryTextCustomizer = null;
 
 function normalizeGalleryText(value) {
   return String(value || "")
@@ -47,6 +51,17 @@ function fillGallerySelect(selectId, values, placeholder) {
 
 function toGalleryArray(value) {
   return Array.isArray(value) ? value : [value].filter(Boolean);
+}
+
+function getGalleryFilmId(film) {
+  return `${film.titre || ""}::${film.year || ""}::${film.image || ""}`;
+}
+
+function isGalleryFilmSelected(film) {
+  const filmId = getGalleryFilmId(film);
+  return galleryState.selectedFilms.some(
+    (selectedFilm) => getGalleryFilmId(selectedFilm) === filmId
+  );
 }
 
 function setupGalleryFilterOptions() {
@@ -138,13 +153,63 @@ function applyGalleryFilters() {
     filmMatchesGalleryFilters(film, filters)
   );
   renderGalleryGrid();
+  syncGallerySelectFilteredButton();
+}
+
+function toggleGalleryFilmSelection(film) {
+  const filmId = getGalleryFilmId(film);
+  const existingIndex = galleryState.selectedFilms.findIndex(
+    (selectedFilm) => getGalleryFilmId(selectedFilm) === filmId
+  );
+
+  if (existingIndex >= 0) {
+    galleryState.selectedFilms.splice(existingIndex, 1);
+  } else {
+    galleryState.selectedFilms.push(film);
+  }
+
+  renderGalleryGrid();
+  renderGallerySelection();
+}
+
+function selectFilteredGalleryFilms() {
+  galleryState.filteredFilms.forEach((film) => {
+    if (!isGalleryFilmSelected(film)) {
+      galleryState.selectedFilms.push(film);
+    }
+  });
+
+  renderGalleryGrid();
+  renderGallerySelection();
+}
+
+function syncGallerySelectFilteredButton() {
+  const button = document.getElementById("gallerySelectFiltered");
+  if (button) button.disabled = galleryState.filteredFilms.length === 0;
+}
+
+function syncGallerySelectionActionButtons() {
+  const hasSelection = galleryState.selectedFilms.length > 0;
+  const clearSelection = document.getElementById("galleryClearSelection");
+  if (clearSelection) clearSelection.disabled = !hasSelection;
+}
+
+function clearGallerySelection() {
+  galleryState.selectedFilms = [];
+  renderGalleryGrid();
+  renderGallerySelection();
 }
 
 function createGalleryCard(film) {
-  const card = document.createElement("button");
-  card.type = "button";
+  const selected = isGalleryFilmSelected(film);
+  const card = document.createElement("article");
   card.className = "gallery-card";
-  card.addEventListener("click", () => openGalleryLightbox(film));
+  card.classList.toggle("is-selected", selected);
+
+  const preview = document.createElement("button");
+  preview.type = "button";
+  preview.className = "gallery-card-preview";
+  preview.addEventListener("click", () => openGalleryLightbox(film));
 
   const img = document.createElement("img");
   img.src = film.image;
@@ -164,8 +229,26 @@ function createGalleryCard(film) {
 
   content.appendChild(title);
   content.appendChild(year);
-  card.appendChild(img);
-  card.appendChild(content);
+  preview.appendChild(img);
+  preview.appendChild(content);
+
+  const selectButton = document.createElement("button");
+  selectButton.type = "button";
+  selectButton.className = "gallery-select-toggle";
+  selectButton.setAttribute("aria-pressed", String(selected));
+  selectButton.setAttribute(
+    "aria-label",
+    selected ? `Retirer ${film.titre} de la sélection` : `Ajouter ${film.titre} à la sélection`
+  );
+  selectButton.addEventListener("click", () => toggleGalleryFilmSelection(film));
+
+  const selectIcon = document.createElement("img");
+  selectIcon.src = "./assets/site/circle.png";
+  selectIcon.alt = "";
+  selectButton.appendChild(selectIcon);
+
+  card.appendChild(preview);
+  card.appendChild(selectButton);
 
   return card;
 }
@@ -190,6 +273,203 @@ function renderGalleryGrid() {
   if (loadMore) {
     loadMore.hidden = galleryState.visibleCount >= galleryState.filteredFilms.length;
   }
+}
+
+function createGallerySelectionItem(film) {
+  const item = document.createElement("div");
+  item.className = "gallery-selection-film";
+
+  const img = document.createElement("img");
+  img.src = film.image;
+  img.alt = "";
+  img.loading = "lazy";
+
+  const info = document.createElement("div");
+  info.className = "gallery-selection-film-info";
+
+  const circle = document.createElement("img");
+  circle.className = "gallery-selection-film-circle";
+  circle.src = "./assets/site/circle.png";
+  circle.alt = "";
+
+  const title = document.createElement("span");
+  title.className = "gallery-selection-film-title";
+  title.textContent = film.titre;
+
+  const year = document.createElement("span");
+  year.className = "gallery-selection-film-year";
+  year.textContent = film.year || "";
+
+  info.appendChild(circle);
+  info.appendChild(title);
+  info.appendChild(year);
+  item.appendChild(img);
+  item.appendChild(info);
+
+  return item;
+}
+
+function getGallerySelectionColumnCount(count) {
+  if (count <= 1) return 1;
+  if (count <= 4) return 2;
+  if (count <= 9) return 3;
+  if (count <= 16) return 4;
+  if (count <= 25) return 5;
+  return 6;
+}
+
+function renderGallerySelection() {
+  const grid = document.getElementById("gallerySelectionGrid");
+  const count = document.getElementById("gallerySelectionCount");
+  const addToCart = document.getElementById("galleryAddToCart");
+  if (!grid) return;
+
+  const selectedCount = galleryState.selectedFilms.length;
+  if (count) {
+    count.textContent = `${selectedCount} film${selectedCount > 1 ? "s" : ""} sélectionné${
+      selectedCount > 1 ? "s" : ""
+    }`;
+  }
+  if (addToCart) {
+    addToCart.disabled = selectedCount === 0;
+  }
+  syncGallerySelectionActionButtons();
+
+  grid.innerHTML = "";
+  grid.style.setProperty(
+    "--gallery-selection-cols",
+    String(getGallerySelectionColumnCount(selectedCount))
+  );
+
+  if (!selectedCount) {
+    const empty = document.createElement("p");
+    empty.className = "gallery-selection-empty";
+    empty.textContent = "Coche des films pour composer ton poster.";
+    grid.appendChild(empty);
+    return;
+  }
+
+  galleryState.selectedFilms.forEach((film) => {
+    grid.appendChild(createGallerySelectionItem(film));
+  });
+}
+
+function openGalleryCustomizer() {
+  const modal = document.getElementById("galleryCustomizeModal");
+  if (!modal) return;
+  galleryTextCustomizer?.writeControls();
+  modal.hidden = false;
+  document.getElementById("galleryTitleInput")?.focus();
+}
+
+function closeGalleryCustomizer() {
+  const modal = document.getElementById("galleryCustomizeModal");
+  if (modal) modal.hidden = true;
+}
+
+function addGallerySelectionToCart() {
+  const feedback = document.getElementById("galleryCartFeedback");
+  if (!galleryState.selectedFilms.length) return;
+
+  const cartItem = {
+    type: "selection-poster",
+    addedAt: new Date().toISOString(),
+    customization: galleryTextCustomizer?.getState() || galleryState.customization,
+    films: galleryState.selectedFilms.map((film) => ({
+      titre: film.titre,
+      year: film.year,
+      image: film.image,
+    })),
+  };
+
+  try {
+    const existingCart = JSON.parse(localStorage.getItem("mppCart") || "[]");
+    existingCart.push(cartItem);
+    localStorage.setItem("mppCart", JSON.stringify(existingCart));
+  } catch (error) {
+    console.warn("Impossible d'enregistrer le panier local.", error);
+  }
+
+  if (feedback) {
+    const count = galleryState.selectedFilms.length;
+    feedback.textContent = `${count} film${count > 1 ? "s" : ""} ajouté${
+      count > 1 ? "s" : ""
+    } au panier.`;
+  }
+}
+
+function setupGalleryCustomizer() {
+  galleryTextCustomizer = MppTextCustomizer.create({
+    defaults: {
+      title: "Ma sélection",
+      subtitle: "Création personnalisée",
+      titleFont:
+        document.getElementById("galleryTitleFontSelect")?.value ||
+        "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+      subtitleFont:
+        document.getElementById("gallerySubtitleFontSelect")?.value ||
+        "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+      titleSize: 24,
+      subtitleSize: 11,
+      titleColor: "#25272d",
+      subtitleColor: "#5c606b",
+      backgroundImage: "assets/img/backgrounds/bg.png",
+    },
+    controls: {
+      titleInput: "galleryTitleInput",
+      subtitleInput: "gallerySubtitleInput",
+      titleFontSelect: "galleryTitleFontSelect",
+      subtitleFontSelect: "gallerySubtitleFontSelect",
+      titleSizeInput: "galleryTitleSizeInput",
+      subtitleSizeInput: "gallerySubtitleSizeInput",
+      titleSizeLabel: "galleryTitleSizeValue",
+      subtitleSizeLabel: "gallerySubtitleSizeValue",
+      titleColorInput: "galleryTitleColorInput",
+      subtitleColorInput: "gallerySubtitleColorInput",
+      backgroundSelect: "galleryBackgroundSelect",
+      backgroundUpload: "galleryBackgroundUpload",
+      resetButton: "galleryResetCustomization",
+      formatButtons: {
+        title: {
+          bold: "[data-gallery-format-scope='title'][data-gallery-format='bold']",
+          italic: "[data-gallery-format-scope='title'][data-gallery-format='italic']",
+          strike: "[data-gallery-format-scope='title'][data-gallery-format='strike']",
+        },
+        subtitle: {
+          bold: "[data-gallery-format-scope='subtitle'][data-gallery-format='bold']",
+          italic: "[data-gallery-format-scope='subtitle'][data-gallery-format='italic']",
+          strike: "[data-gallery-format-scope='subtitle'][data-gallery-format='strike']",
+        },
+      },
+    },
+    targets: {
+      mode: "inline",
+      background: ".gallery-selection-poster",
+      title: "gallerySelectionTitle",
+      subtitle: "gallerySelectionSubtitle",
+      titleNormalWeight: "800",
+      titleBoldWeight: "900",
+      subtitleNormalWeight: "700",
+      subtitleBoldWeight: "800",
+    },
+    onChange: (customizer) => {
+      galleryState.customization = customizer.getState();
+    },
+  });
+
+  galleryTextCustomizer.bind();
+  galleryTextCustomizer.writeControls();
+  galleryTextCustomizer.apply();
+  galleryState.customization = galleryTextCustomizer.getState();
+
+  document.getElementById("galleryCustomizeOpen")?.addEventListener("click", openGalleryCustomizer);
+  document.getElementById("galleryCustomizeClose")?.addEventListener("click", closeGalleryCustomizer);
+  document.getElementById("galleryClearSelection")?.addEventListener("click", clearGallerySelection);
+  document.getElementById("galleryAddToCart")?.addEventListener("click", addGallerySelectionToCart);
+
+  document.getElementById("galleryCustomizeModal")?.addEventListener("click", (event) => {
+    if (event.target.id === "galleryCustomizeModal") closeGalleryCustomizer();
+  });
 }
 
 function openGalleryLightbox(film) {
@@ -229,7 +509,10 @@ function setupGalleryPage() {
   galleryState.films = shuffleGalleryFilms(filmsDB.filter((film) => film.image));
   galleryState.filteredFilms = [...galleryState.films];
   setupGalleryFilterOptions();
+  setupGalleryCustomizer();
   renderGalleryGrid();
+  renderGallerySelection();
+  syncGallerySelectFilteredButton();
 
   document
     .getElementById("galleryFilterToggle")
@@ -249,6 +532,9 @@ function setupGalleryPage() {
   document
     .getElementById("gallerySearchInput")
     ?.addEventListener("input", applyGalleryFilters);
+  document
+    .getElementById("gallerySelectFiltered")
+    ?.addEventListener("click", selectFilteredGalleryFilms);
 
   document.getElementById("galleryLoadMore")?.addEventListener("click", () => {
     galleryState.visibleCount += 10;
@@ -260,7 +546,10 @@ function setupGalleryPage() {
     if (event.target.id === "galleryLightbox") closeGalleryLightbox();
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeGalleryLightbox();
+    if (event.key === "Escape") {
+      closeGalleryLightbox();
+      closeGalleryCustomizer();
+    }
   });
 }
 
