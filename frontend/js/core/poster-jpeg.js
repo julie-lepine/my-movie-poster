@@ -233,7 +233,8 @@
     const logo = await loadImage(LOGO_SRC);
     const logoWidth = Math.min(width * 0.34, 420 * scale);
     const logoHeight = footerHeight * 0.62;
-    drawImageContain(ctx, logo, (width - logoWidth) / 2, y + footerHeight * 0.2, logoWidth, logoHeight);
+    const logoX = width - width * 0.08 - logoWidth;
+    drawImageContain(ctx, logo, logoX, y + footerHeight * 0.2, logoWidth, logoHeight);
   }
 
   async function renderQuizPoster(item, options) {

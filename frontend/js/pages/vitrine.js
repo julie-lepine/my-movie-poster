@@ -373,7 +373,6 @@ function getGallerySelectionRowHeight(columnCount) {
 function renderGallerySelection() {
   const grid = document.getElementById("gallerySelectionGrid");
   const count = document.getElementById("gallerySelectionCount");
-  const addToCart = document.getElementById("galleryAddToCart");
   const poster = grid?.closest(".gallery-selection-poster");
   if (!grid) return;
 
@@ -383,9 +382,9 @@ function renderGallerySelection() {
       selectedCount > 1 ? "s" : ""
     }`;
   }
-  if (addToCart) {
-    addToCart.disabled = selectedCount === 0;
-  }
+  document.querySelectorAll("#gallerySideAddToCart").forEach((button) => {
+    button.disabled = selectedCount === 0;
+  });
   syncGallerySelectionActionButtons();
 
   grid.innerHTML = "";
@@ -441,7 +440,6 @@ function isGalleryCustomizerEventInsideCard(event, card) {
 }
 
 async function addGallerySelectionToCart() {
-  const feedback = document.getElementById("galleryCartFeedback");
   if (!galleryState.selectedFilms.length) return;
 
   const cartItem = {
@@ -455,9 +453,7 @@ async function addGallerySelectionToCart() {
     })),
   };
 
-  if (feedback) {
-    feedback.textContent = "Préparation du rendu...";
-  }
+  setGalleryCartFeedback("Préparation du rendu...");
 
   try {
     const renderer = window.MppPosterJpeg || (await window.loadMppPosterJpeg?.());
@@ -488,9 +484,13 @@ async function addGallerySelectionToCart() {
     }
   }
 
-  if (feedback) {
-    feedback.textContent = "Poster ajouté au panier.";
-  }
+  setGalleryCartFeedback("Poster ajouté au panier.");
+}
+
+function setGalleryCartFeedback(message) {
+  document.querySelectorAll(".gallery-cart-feedback").forEach((feedback) => {
+    feedback.textContent = message;
+  });
 }
 
 function setupGalleryCustomizer() {
@@ -561,7 +561,8 @@ function setupGalleryCustomizer() {
   document.getElementById("galleryCustomizeOpen")?.addEventListener("click", openGalleryCustomizer);
   document.getElementById("galleryCustomizeClose")?.addEventListener("click", closeGalleryCustomizer);
   document.getElementById("galleryClearSelection")?.addEventListener("click", clearGallerySelection);
-  document.getElementById("galleryAddToCart")?.addEventListener("click", addGallerySelectionToCart);
+  document.getElementById("gallerySideAddToCart")?.addEventListener("click", addGallerySelectionToCart);
+  document.getElementById("galleryCustomizeValidate")?.addEventListener("click", closeGalleryCustomizer);
 
   const galleryCustomizeModal = document.getElementById("galleryCustomizeModal");
   const galleryCustomizeCard = document.getElementById("galleryCustomizeCard");

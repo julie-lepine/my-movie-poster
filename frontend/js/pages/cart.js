@@ -153,6 +153,8 @@ async function openCartPreview(item, index) {
   const previewItem = await ensureCartPosterImage(item, index);
 
   content.innerHTML = "";
+  const previewFrame = document.createElement("div");
+  previewFrame.className = "cart-preview-watermark-frame";
   if (previewItem.posterImage) {
     const img = document.createElement("img");
     img.className = "cart-preview-rendered-image";
@@ -160,10 +162,11 @@ async function openCartPreview(item, index) {
     img.alt = getCartItemTitle(previewItem);
     img.decoding = "async";
     protectImageElement(img);
-    content.appendChild(img);
+    previewFrame.appendChild(img);
   } else {
-    content.appendChild(createCartPosterPreview(previewItem));
+    previewFrame.appendChild(createCartPosterPreview(previewItem));
   }
+  content.appendChild(previewFrame);
   document.getElementById("cartPreviewClose")?.focus();
 }
 

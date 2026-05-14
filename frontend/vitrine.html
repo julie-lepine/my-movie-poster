@@ -114,6 +114,10 @@
         <button id="galleryCustomizeOpen" class="gallery-customize-open" type="button" aria-controls="galleryCustomizeModal">
           Personnaliser
         </button>
+        <button id="gallerySideAddToCart" class="gallery-add-to-cart gallery-side-add-to-cart" type="button" disabled>
+          Ajouter au panier
+        </button>
+        <p id="gallerySideCartFeedback" class="gallery-cart-feedback gallery-side-cart-feedback" aria-live="polite"></p>
       </aside>
     </div>
   </section>
@@ -193,7 +197,7 @@
       <input id="galleryBackgroundUpload" class="poster-editor-file" type="file" accept="image/*" />
 
       <button id="galleryResetCustomization" type="button">Réinitialiser la personnalisation</button>
-      <button id="galleryAddToCart" class="gallery-add-to-cart" type="button" disabled>Ajouter au panier</button>
+      <button id="galleryCustomizeValidate" class="gallery-add-to-cart" type="button">Valider</button>
       <p id="galleryCartFeedback" class="gallery-cart-feedback" aria-live="polite"></p>
       </section>
       <aside class="customize-live-preview" aria-label="Aperçu du poster en direct">
