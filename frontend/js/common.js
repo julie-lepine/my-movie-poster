@@ -59,7 +59,29 @@ function updateMppCartIndicator() {
   });
 }
 
+var mppPosterJpegLoadPromise = null;
+
+function loadMppPosterJpeg() {
+  if (window.MppPosterJpeg?.createPosterJpeg) {
+    return Promise.resolve(window.MppPosterJpeg);
+  }
+
+  if (!mppPosterJpegLoadPromise) {
+    mppPosterJpegLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "js/core/poster-jpeg.js";
+      script.defer = true;
+      script.onload = () => resolve(window.MppPosterJpeg);
+      script.onerror = () => reject(new Error("Impossible de charger le renderer JPEG."));
+      document.head.appendChild(script);
+    });
+  }
+
+  return mppPosterJpegLoadPromise;
+}
+
 window.updateMppCartIndicator = updateMppCartIndicator;
+window.loadMppPosterJpeg = loadMppPosterJpeg;
 
 window.addEventListener("storage", (event) => {
   if (event.key === "mppCart") updateMppCartIndicator();

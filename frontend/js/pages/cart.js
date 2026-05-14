@@ -21,13 +21,32 @@ function getCartItemSubtitle(item) {
   return item.customization?.subtitle || "Création personnalisée";
 }
 
-function getCartDownloadFilename(item) {
-  return `${getCartItemTitle(item)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "") || "poster"}-mymoviesposter.jpg`;
+async function ensureCartPosterImage(item, index) {
+  const renderer = window.MppPosterJpeg || (await window.loadMppPosterJpeg?.());
+  const version = renderer?.RENDERER_VERSION || 0;
+  if (!renderer?.createPosterJpeg || (item.posterImage && item.posterImageVersion === version)) {
+    return item;
+  }
+
+  try {
+    const updated = { ...item };
+    updated.posterImage = await renderer.createPosterJpeg(updated, {
+      width: updated.type === "selection-poster" ? 1400 : 1500,
+      quality: 0.88,
+    });
+    updated.posterImageVersion = version;
+
+    const items = readCartItems();
+    if (items[index]) {
+      items[index] = updated;
+      writeCartItems(items);
+      renderCart();
+    }
+    return updated;
+  } catch (error) {
+    console.warn("Impossible de régénérer l'aperçu du poster.", error);
+    return item;
+  }
 }
 
 function getCartPosterColumnCount(item, filmCount) {
@@ -123,24 +142,28 @@ function createCartPosterPreview(item) {
   return poster;
 }
 
-function openCartPreview(item) {
+async function openCartPreview(item, index) {
   const modal = document.getElementById("cartPreviewModal");
   const content = document.getElementById("cartPreviewContent");
   if (!modal || !content) return;
 
   content.innerHTML = "";
-  if (item.posterImage) {
+  modal.hidden = false;
+  content.textContent = "Préparation de l'aperçu...";
+  const previewItem = await ensureCartPosterImage(item, index);
+
+  content.innerHTML = "";
+  if (previewItem.posterImage) {
     const img = document.createElement("img");
     img.className = "cart-preview-rendered-image";
-    img.src = item.posterImage;
-    img.alt = getCartItemTitle(item);
+    img.src = previewItem.posterImage;
+    img.alt = getCartItemTitle(previewItem);
     img.decoding = "async";
     protectImageElement(img);
     content.appendChild(img);
   } else {
-    content.appendChild(createCartPosterPreview(item));
+    content.appendChild(createCartPosterPreview(previewItem));
   }
-  modal.hidden = false;
   document.getElementById("cartPreviewClose")?.focus();
 }
 
@@ -195,19 +218,7 @@ function createCartItem(item, index) {
   view.type = "button";
   view.className = "cart-view-item";
   view.textContent = "Visualiser le poster";
-  view.addEventListener("click", () => openCartPreview(item));
-
-  const download = document.createElement("a");
-  download.className = "cart-download-item";
-  download.textContent = "Télécharger le JPEG";
-  if (item.posterImage) {
-    download.href = item.posterImage;
-    download.download = getCartDownloadFilename(item);
-  } else {
-    download.href = "#";
-    download.setAttribute("aria-disabled", "true");
-    download.addEventListener("click", (event) => event.preventDefault());
-  }
+  view.addEventListener("click", () => openCartPreview(item, index));
 
   const remove = document.createElement("button");
   remove.type = "button";
@@ -225,7 +236,6 @@ function createCartItem(item, index) {
   details.appendChild(subtitle);
   details.appendChild(meta);
   actions.appendChild(view);
-  actions.appendChild(download);
   actions.appendChild(remove);
   details.appendChild(actions);
   article.appendChild(preview);

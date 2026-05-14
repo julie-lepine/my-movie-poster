@@ -81,6 +81,9 @@
           <button id="gallerySelectFiltered" class="gallery-select-filtered" type="button">
             Tout sélectionner
           </button>
+          <button id="galleryClearSelection" class="gallery-clear-selection" type="button" disabled>
+            Désélectionner la sélection
+          </button>
         </div>
       </form>
     </div>
@@ -111,9 +114,6 @@
         <button id="galleryCustomizeOpen" class="gallery-customize-open" type="button" aria-controls="galleryCustomizeModal">
           Personnaliser
         </button>
-        <button id="galleryClearSelection" class="gallery-clear-selection" type="button" disabled>
-          Désélectionner la sélection
-        </button>
       </aside>
     </div>
   </section>
@@ -124,7 +124,8 @@
   </div>
 
   <div id="galleryCustomizeModal" class="gallery-customize-modal" hidden role="dialog" aria-modal="true" aria-labelledby="galleryCustomizeTitle">
-    <div class="gallery-customize-card poster-editor">
+    <div id="galleryCustomizeCard" class="customize-live-card">
+      <section class="gallery-customize-card poster-editor customize-controls">
       <button id="galleryCustomizeClose" class="gallery-customize-close" type="button" aria-label="Fermer la personnalisation">×</button>
       <h3 id="galleryCustomizeTitle">Personnaliser</h3>
 
@@ -191,9 +192,13 @@
       <label for="galleryBackgroundUpload">Charger un fond depuis mon appareil</label>
       <input id="galleryBackgroundUpload" class="poster-editor-file" type="file" accept="image/*" />
 
-      <button id="galleryResetCustomization" type="button">Réinitialiser texte</button>
+      <button id="galleryResetCustomization" type="button">Réinitialiser la personnalisation</button>
       <button id="galleryAddToCart" class="gallery-add-to-cart" type="button" disabled>Ajouter au panier</button>
       <p id="galleryCartFeedback" class="gallery-cart-feedback" aria-live="polite"></p>
+      </section>
+      <aside class="customize-live-preview" aria-label="Aperçu du poster en direct">
+        <div id="galleryCustomizePreview" class="customize-live-preview-inner"></div>
+      </aside>
     </div>
   </div>
 </main>
@@ -241,7 +246,6 @@
 <script src="js/common.js"></script>
 <script src="js/data/filmsDB.js"></script>
 <script src="js/core/text-customizer.js"></script>
-<script src="js/core/poster-jpeg.js"></script>
 <script src="js/pages/vitrine.js"></script>
 </body>
 </html>

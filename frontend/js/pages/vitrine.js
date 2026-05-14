@@ -9,6 +9,27 @@ const galleryState = {
 };
 
 var galleryTextCustomizer = null;
+var galleryCustomizePreviewFrame = 0;
+
+function refreshGalleryCustomizePreview() {
+  const modal = document.getElementById("galleryCustomizeModal");
+  const preview = document.getElementById("galleryCustomizePreview");
+  const source = document.querySelector(".gallery-selection-poster");
+  if (!modal || modal.hidden || !preview || !source) return;
+
+  const clone = source.cloneNode(true);
+  clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+  preview.innerHTML = "";
+  preview.appendChild(clone);
+}
+
+function scheduleGalleryCustomizePreview() {
+  if (galleryCustomizePreviewFrame) return;
+  galleryCustomizePreviewFrame = requestAnimationFrame(() => {
+    galleryCustomizePreviewFrame = 0;
+    refreshGalleryCustomizePreview();
+  });
+}
 
 function normalizeGalleryText(value) {
   return String(value || "")
@@ -383,6 +404,7 @@ function renderGallerySelection() {
     empty.className = "gallery-selection-empty";
     empty.textContent = "Coche des films pour composer ton poster.";
     grid.appendChild(empty);
+    scheduleGalleryCustomizePreview();
     return;
   }
 
@@ -391,6 +413,7 @@ function renderGallerySelection() {
     fragment.appendChild(createGallerySelectionItem(film));
   });
   grid.appendChild(fragment);
+  scheduleGalleryCustomizePreview();
 }
 
 function openGalleryCustomizer() {
@@ -398,12 +421,23 @@ function openGalleryCustomizer() {
   if (!modal) return;
   galleryTextCustomizer?.writeControls();
   modal.hidden = false;
+  scheduleGalleryCustomizePreview();
   document.getElementById("galleryTitleInput")?.focus();
 }
 
 function closeGalleryCustomizer() {
   const modal = document.getElementById("galleryCustomizeModal");
   if (modal) modal.hidden = true;
+  const preview = document.getElementById("galleryCustomizePreview");
+  if (preview) preview.innerHTML = "";
+}
+
+function isGalleryCustomizerEventInsideCard(event, card) {
+  if (!card) return false;
+  if (typeof event.composedPath === "function") {
+    return event.composedPath().includes(card);
+  }
+  return event.target instanceof Node && card.contains(event.target);
 }
 
 async function addGallerySelectionToCart() {
@@ -426,10 +460,12 @@ async function addGallerySelectionToCart() {
   }
 
   try {
-    cartItem.posterImage = await window.MppPosterJpeg?.createPosterJpeg(cartItem, {
+    const renderer = window.MppPosterJpeg || (await window.loadMppPosterJpeg?.());
+    cartItem.posterImage = await renderer?.createPosterJpeg(cartItem, {
       width: 1400,
       quality: 0.88,
     });
+    cartItem.posterImageVersion = renderer?.RENDERER_VERSION || 1;
   } catch (error) {
     console.warn("Impossible de générer le JPEG du poster.", error);
   }
@@ -513,6 +549,7 @@ function setupGalleryCustomizer() {
     },
     onChange: (customizer) => {
       galleryState.customization = customizer.getState();
+      scheduleGalleryCustomizePreview();
     },
   });
 
@@ -526,8 +563,11 @@ function setupGalleryCustomizer() {
   document.getElementById("galleryClearSelection")?.addEventListener("click", clearGallerySelection);
   document.getElementById("galleryAddToCart")?.addEventListener("click", addGallerySelectionToCart);
 
-  document.getElementById("galleryCustomizeModal")?.addEventListener("click", (event) => {
-    if (event.target.id === "galleryCustomizeModal") closeGalleryCustomizer();
+  const galleryCustomizeModal = document.getElementById("galleryCustomizeModal");
+  const galleryCustomizeCard = document.getElementById("galleryCustomizeCard");
+  galleryCustomizeModal?.addEventListener("pointerdown", (event) => {
+    if (isGalleryCustomizerEventInsideCard(event, galleryCustomizeCard)) return;
+    closeGalleryCustomizer();
   });
 }
 

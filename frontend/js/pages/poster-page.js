@@ -131,7 +131,7 @@ function runFinal() {
 
     revealPoster();
 
-    setTimeout(scheduleMagnifierCloneRefresh, 950);
+    setTimeout(schedulePosterLayoutMetrics, 950);
   }, 1200);
 }
 

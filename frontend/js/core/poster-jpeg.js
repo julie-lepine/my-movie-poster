@@ -1,4 +1,5 @@
 (function () {
+  const RENDERER_VERSION = 2;
   const imageCache = new Map();
   const DEFAULT_BACKGROUND = "assets/img/backgrounds/bg.png";
   const LOGO_SRC = "./assets/site/logo.png";
@@ -46,6 +47,10 @@
 
   function firstFontFamily(fontStack, fallback = "Montserrat, Arial, sans-serif") {
     return String(fontStack || fallback).split(",")[0].trim() || fallback;
+  }
+
+  function clampNumber(value, min, max) {
+    return Math.min(Math.max(value, min), max);
   }
 
   function applyTextFont(ctx, customization, scope, size, fallbackWeight) {
@@ -137,8 +142,16 @@
   }
 
   function drawHeader(ctx, item, x, y, width, customization, scale) {
-    const titleSize = Math.max(28, Number(customization?.titleSize || 34) * scale);
-    const subtitleSize = Math.max(18, Number(customization?.subtitleSize || 22) * scale);
+    const titleSize = clampNumber(
+      Number(customization?.titleSize || 34) * scale,
+      18 * scale,
+      Math.min(width * 0.085, 44 * scale)
+    );
+    const subtitleSize = clampNumber(
+      Number(customization?.subtitleSize || 22) * scale,
+      9 * scale,
+      Math.min(width * 0.045, 18 * scale)
+    );
     const centerX = x + width / 2;
 
     ctx.save();
@@ -163,14 +176,18 @@
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
 
-    const circleSize = compact ? Math.max(9, 12 * scale) : Math.max(14, 16 * scale);
+    const circleSize = compact
+      ? clampNumber(maxHeight * 0.2, 7, width * 0.1)
+      : clampNumber(maxHeight * 0.18, 10, width * 0.1);
     return loadImage(CIRCLE_SRC).then((circle) => {
       if (circle) drawImageContain(ctx, circle, x + (width - circleSize) / 2, y, circleSize, circleSize);
 
-      const titleSize = compact ? Math.max(9, 10 * scale) : Math.max(12, 13 * scale);
+      const titleSize = compact
+        ? clampNumber(maxHeight * 0.22, 7, Math.min(width * 0.1, maxHeight * 0.28))
+        : clampNumber(maxHeight * 0.2, 10, Math.min(width * 0.12, maxHeight * 0.28));
       ctx.fillStyle = "#31343c";
       ctx.font = `600 ${titleSize}px Arial, sans-serif`;
-      const titleTop = y + circleSize + 4 * scale;
+      const titleTop = y + circleSize + Math.max(2, titleSize * 0.28);
       const lines = wrapText(ctx, film.titre || "", width, compact ? 2 : 3);
       lines.forEach((line, index) => {
         ctx.fillText(line, x + width / 2, titleTop + index * titleSize * 1.08);
@@ -178,7 +195,7 @@
 
       const yearTop = Math.min(y + maxHeight - titleSize * 1.2, titleTop + lines.length * titleSize * 1.08 + 2 * scale);
       ctx.fillStyle = "#5c606b";
-      ctx.font = `500 ${Math.max(8, titleSize * 0.82)}px Arial, sans-serif`;
+      ctx.font = `500 ${clampNumber(titleSize * 0.72, 6, maxHeight * 0.18)}px Arial, sans-serif`;
       ctx.fillText(film.year || "", x + width / 2, yearTop);
       ctx.restore();
     });
@@ -296,6 +313,7 @@
   }
 
   window.MppPosterJpeg = {
+    RENDERER_VERSION,
     createPosterJpeg,
   };
 })();

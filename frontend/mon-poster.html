@@ -81,24 +81,58 @@
           </div>
         </div>
       </div>
-      <div id="posterMagnifier" class="poster-magnifier" hidden aria-hidden="true">
-        <div class="poster-magnifier-inner"></div>
-      </div>
     </div>
 
     <div class="poster-side-stack">
+      <label class="poster-side-count-control" for="posterSideCountSelect">
+        <span>Nombre d'images</span>
+        <select id="posterSideCountSelect">
+          <option value="25">25</option>
+          <option value="48">48</option>
+          <option value="100" selected>100</option>
+        </select>
+      </label>
       <button
         type="button"
-        id="posterZoomToggle"
-        class="poster-zoom-toggle"
-        aria-pressed="false"
-        disabled
-        title="Disponible avec 100 affiches"
+        id="posterPreviewOpen"
+        class="poster-preview-open"
+        aria-controls="posterLargePreviewModal"
       >
-        Loupe
+        Visualiser le poster
       </button>
-      <div id="posterEditor" class="poster-editor">
-      <h3>Personnaliser</h3>
+      <button
+        type="button"
+        id="posterCustomizeOpen"
+        class="poster-customize-open"
+        aria-controls="posterCustomizeModal"
+      >
+        Personnaliser
+      </button>
+      <button id="posterSideAddToCart" class="poster-add-to-cart poster-side-add-to-cart" type="button">
+        Ajouter au panier
+      </button>
+      <p id="posterSideCartFeedback" class="poster-cart-feedback poster-side-cart-feedback" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <div id="posterLargePreviewModal" class="poster-large-preview-modal" hidden role="dialog" aria-modal="true" aria-label="Visualisation du poster">
+    <div class="poster-large-preview-card">
+      <button id="posterLargePreviewClose" class="gallery-customize-close poster-large-preview-close" type="button" aria-label="Fermer la visualisation">×</button>
+      <div class="poster-preview-zoom-controls poster-large-preview-zoom-controls" aria-label="Zoom de la visualisation">
+        <button id="posterLargePreviewZoomOut" type="button" aria-label="Dézoomer">-</button>
+        <span id="posterLargePreviewZoomValue">100%</span>
+        <button id="posterLargePreviewZoomIn" type="button" aria-label="Zoomer">+</button>
+        <button id="posterLargePreviewZoomReset" type="button">Réinitialiser</button>
+      </div>
+      <div id="posterLargePreviewContent" class="poster-large-preview-content"></div>
+    </div>
+  </div>
+
+  <div id="posterCustomizeModal" class="gallery-customize-modal poster-customize-modal" hidden role="dialog" aria-modal="true" aria-labelledby="posterCustomizeTitle">
+    <div id="posterCustomizeCard" class="customize-live-card">
+      <section id="posterEditor" class="poster-editor customize-controls" aria-labelledby="posterCustomizeTitle">
+      <button id="posterCustomizeClose" class="gallery-customize-close" type="button" aria-label="Fermer la personnalisation">×</button>
+      <h3 id="posterCustomizeTitle">Personnaliser</h3>
       <label for="posterCountSelect"><strong>Nombre d'images</strong></label>
       <select id="posterCountSelect">
         <option value="25">25</option>
@@ -170,9 +204,19 @@
       <input id="posterBackgroundUpload" class="poster-editor-file" type="file" accept="image/*" />
 
       <button id="resetPosterText" type="button">Réinitialiser texte</button>
-      <button id="posterAddToCart" class="poster-add-to-cart" type="button">Ajouter au panier</button>
+      <button id="posterCustomizeValidate" class="poster-add-to-cart" type="button">Valider</button>
       <p id="posterCartFeedback" class="poster-cart-feedback" aria-live="polite"></p>
-      </div>
+      </section>
+
+      <aside class="customize-live-preview poster-customize-preview-panel" aria-label="Aperçu du poster en direct">
+        <div class="poster-preview-zoom-controls" aria-label="Zoom de l'aperçu">
+          <button id="posterPreviewZoomOut" type="button" aria-label="Dézoomer">-</button>
+          <span id="posterPreviewZoomValue">100%</span>
+          <button id="posterPreviewZoomIn" type="button" aria-label="Zoomer">+</button>
+          <button id="posterPreviewZoomReset" type="button">Réinitialiser</button>
+        </div>
+        <div id="posterCustomizePreview" class="customize-live-preview-inner poster-customize-preview"></div>
+      </aside>
     </div>
   </div>
 </main>
@@ -225,7 +269,6 @@
 <script src="js/core/mapping.js"></script>
 <script src="js/core/mpp-dom.js"></script>
 <script src="js/core/text-customizer.js"></script>
-<script src="js/core/poster-jpeg.js"></script>
 <script src="js/core/recommend.js"></script>
 <script src="js/poster/poster.js"></script>
 <script src="js/pages/poster-page.js"></script>
