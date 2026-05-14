@@ -508,6 +508,12 @@ img {
   cursor: not-allowed;
 }
 
+.gallery-select-toggle:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
 .gallery-filter-actions .gallery-clear-selection {
   width: auto;
   padding: 9px 16px;
@@ -746,7 +752,7 @@ img {
 .gallery-selection-poster {
   width: 100%;
   box-sizing: border-box;
-  padding: 14px;
+  padding: 8px;
   display: grid;
   grid-template-rows: auto auto auto;
   gap: 10px;
@@ -2062,6 +2068,28 @@ img {
   object-position: center center;
 }
 
+.poster-grid[data-layout="48"] .poster-grid-tail {
+  align-items: flex-start;
+  height: auto;
+}
+
+.poster-grid[data-layout="48"] .poster-grid-tail .poster-film {
+  height: auto;
+  max-height: none;
+  grid-template-rows: auto auto;
+  overflow: visible;
+  align-self: flex-start;
+}
+
+.poster-grid[data-layout="48"] .poster-grid-tail .poster-film > img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  max-height: none;
+  object-fit: cover;
+  object-position: center;
+}
+
 /* Dernière ligne incomplète : flex ; en ×100 les vignettes gardent la largeur d’une colonne 8 et la ligne est centrée */
 .poster-grid-tail {
   grid-column: 1 / -1;
@@ -2080,20 +2108,36 @@ img {
   min-width: 0;
 }
 
-/* 100 films : même largeur de cellule que le reste de la grille (8 col + gap), dernière ligne centrée */
+/* 100 films : même largeur de cellule que le reste de la grille ; dernière ligne centrée ; pas d’étirement flex (vignettes carrées). */
 .poster-grid[data-layout="100"] .poster-grid-tail {
   justify-content: center;
+  align-items: flex-start;
+  height: auto;
 }
 
 .poster-grid[data-layout="100"] .poster-grid-tail .poster-film {
   flex: 0 0 calc((100% - (var(--poster-cols, 8) - 1) * var(--poster-gap, 10px)) / var(--poster-cols, 8));
   max-width: calc((100% - (var(--poster-cols, 8) - 1) * var(--poster-gap, 10px)) / var(--poster-cols, 8));
   min-width: 0;
+  height: auto;
+  max-height: none;
+  grid-template-rows: auto auto;
+  overflow: visible;
+  align-self: flex-start;
 }
 
 .poster-grid[data-layout="100"] .poster-grid-tail .poster-film:only-child {
   flex: 0 0 calc((100% - (var(--poster-cols, 8) - 1) * var(--poster-gap, 10px)) / var(--poster-cols, 8));
   max-width: calc((100% - (var(--poster-cols, 8) - 1) * var(--poster-gap, 10px)) / var(--poster-cols, 8));
+}
+
+.poster-grid[data-layout="100"] .poster-grid-tail .poster-film > img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  max-height: none;
+  object-fit: cover;
+  object-position: center;
 }
 
 /* Grille 100 : air sous les affiches */
@@ -2478,10 +2522,6 @@ img {
   font-size: 4.5px;
 }
 
-.poster-grid[data-layout="100"] .poster-grid-tail {
-  justify-content: flex-start;
-}
-
 .poster-sheet[data-poster-layout="25"] .poster-footer,
 .poster-sheet[data-poster-layout="48"] .poster-footer {
   display: flex;
@@ -2813,6 +2853,188 @@ img {
   object-fit: contain;
 }
 
+/* Vitrine : aperçu à l'échelle, mais même structure produit que Mon Poster. */
+.gallery-selection-poster.poster-sheet {
+  width: min(100%, 340px);
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: 420 / 594;
+  grid-template-rows: 10% 80% 10%;
+  row-gap: 0;
+  padding: clamp(6px, 1.6cqi, 11px) clamp(8px, 2.2cqi, 14px) clamp(6px, 1.5cqi, 10px);
+  align-content: stretch;
+  overflow: visible;
+  background-color: #fff;
+  background-image: none;
+  box-shadow: 0 18px 32px rgba(17, 24, 39, 0.22);
+}
+
+.gallery-selection-poster.poster-sheet::before,
+.gallery-selection-poster.poster-sheet::after {
+  content: none;
+  display: none;
+}
+
+.gallery-selection-poster.poster-sheet .poster-header {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.gallery-selection-poster.poster-sheet .poster-title {
+  font-size: min(var(--poster-title-font-size, 24px), clamp(18px, 6cqi, 24px));
+  line-height: 0.92;
+}
+
+.gallery-selection-poster.poster-sheet .poster-subtitle {
+  font-size: min(var(--poster-subtitle-font-size, 12px), clamp(9px, 3cqi, 12px));
+  line-height: 1;
+}
+
+.gallery-selection-poster.poster-sheet .poster-grid {
+  width: 86%;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  align-self: center;
+  justify-self: center;
+  align-content: start;
+  /* minmax(0,1fr) peut effondrer les lignes à 0 px → vignettes invisibles en bas */
+  grid-auto-rows: auto;
+  gap: clamp(4px, 1.4cqi, 7px);
+  overflow: visible;
+}
+
+.gallery-selection-poster.poster-sheet .poster-grid[data-layout="25"] {
+  width: 88%;
+}
+
+.gallery-selection-poster.poster-sheet .poster-grid[data-layout="48"] {
+  width: 86%;
+}
+
+.gallery-selection-poster.poster-sheet .poster-grid[data-layout="100"] {
+  width: 88%;
+  grid-template-rows: repeat(var(--poster-rows, 10), auto);
+  grid-auto-rows: auto;
+  align-content: start;
+}
+
+/* Spécificité > .poster-grid[data-layout="100"] .poster-film > img { max-height: 100% } qui cassait le 1:1 en ×100 */
+.gallery-selection-poster.poster-sheet .poster-grid[data-layout="100"] .poster-film > img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
+}
+
+.gallery-selection-poster.poster-sheet .poster-film {
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  grid-template-rows: auto auto;
+  gap: clamp(2px, 0.8cqi, 4px);
+  overflow: visible;
+  align-content: start;
+  justify-items: center;
+  align-items: start;
+  align-self: start;
+  container-type: inline-size;
+}
+
+.gallery-selection-poster.poster-sheet .poster-film > img {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.gallery-selection-poster.poster-sheet .poster-film .film-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(1px, 0.35cqi, 2px);
+  padding: 0;
+  min-height: 0;
+}
+
+.gallery-selection-poster.poster-sheet .film-title {
+  --film-title-fit-size: clamp(3px, 18cqi, 9px);
+  --film-title-max-height: clamp(7px, 34cqi, 22px);
+  font-size: var(--film-title-fit-size);
+  max-height: var(--film-title-max-height);
+  line-height: 1.05;
+  width: 100%;
+  text-align: center;
+}
+
+.gallery-selection-poster.poster-sheet .film-year {
+  font-size: clamp(3px, 13cqi, 7px);
+  line-height: 1;
+  width: 100%;
+  text-align: center;
+}
+
+.gallery-selection-poster.poster-sheet .film-circle {
+  display: block;
+  width: clamp(1px, 6cqi, 4px);
+  height: clamp(1px, 6cqi, 4px);
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+
+/* Vitrine / panier : cercles plus petits que Mon Poster (règles .poster-grid[data-layout] plus spécifiques). */
+.gallery-selection-poster.poster-sheet .poster-grid[data-layout="25"] .poster-film .film-circle {
+  width: 5px;
+  height: 5px;
+}
+
+.gallery-selection-poster.poster-sheet .poster-grid[data-layout="48"] .poster-film .film-circle {
+  width: 4px;
+  height: 4px;
+}
+
+.gallery-selection-poster.poster-sheet .poster-grid[data-layout="100"] .poster-film .film-circle {
+  width: 3px;
+  height: 3px;
+}
+
+.gallery-selection-poster.poster-sheet .poster-footer {
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: visible;
+}
+
+.gallery-selection-poster.poster-sheet .poster-footer-logo {
+  width: min(92px, 24cqi);
+  max-height: 100%;
+}
+
 /* =======================
    BUTTONS
 ======================= */
@@ -3002,7 +3224,7 @@ button:hover {
 
 .cart-item {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: minmax(176px, 200px) minmax(0, 1fr);
   gap: 18px;
   padding: 16px;
   background: #fff;
@@ -3045,24 +3267,42 @@ button:hover {
   place-items: center;
   padding: 0;
   background: #e9e9e9;
+  min-width: 0;
+  min-height: 0;
 }
 
 .cart-live-poster-frame {
   position: relative;
-  display: block;
+  display: grid;
+  justify-items: stretch;
+  align-items: center;
+  width: 100%;
   max-width: 100%;
   max-height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .cart-live-poster-frame > .poster-sheet,
 .cart-live-poster-frame > .gallery-selection-poster {
   margin: 0;
-  transform-origin: top left;
+  transform-origin: center top;
   pointer-events: none;
+  width: 100%;
+  max-width: 100%;
 }
 
+/* Panier : Mon Poster + vitrine — même contrainte que l’aperçu vitrine (sinon .poster-sheet reste en mm A2 → scroll / vignette en lamelle). */
 .cart-live-poster-frame > .poster-sheet {
-  display: grid;
+  display: grid !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 420 / 594;
+  box-sizing: border-box;
 }
 
 .cart-item-preview--live .poster-sheet,
@@ -3090,9 +3330,12 @@ button:hover {
 .cart-item h2 {
   margin: 0;
   font-family: "Montserrat", "Segoe UI", sans-serif;
-  font-size: clamp(20px, 3vw, 30px);
-  line-height: 1;
-  text-transform: uppercase;
+  font-size: clamp(18px, 2.6vw, 28px);
+  line-height: 1.12;
+  text-transform: none;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  max-width: 100%;
 }
 
 .cart-item-subtitle,
@@ -3107,6 +3350,8 @@ button:hover {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
 .cart-preview-modal {
@@ -3164,15 +3409,22 @@ button:hover {
 
 .cart-preview-content {
   width: 100%;
+  min-height: min(62vh, 520px);
+  max-width: 100%;
   display: grid;
   place-items: center;
+  overflow-x: hidden;
 }
 
 .cart-preview-watermark-frame {
   position: relative;
-  display: inline-grid;
-  place-items: center;
+  display: grid;
+  width: 100%;
+  justify-items: center;
+  align-items: start;
+  min-height: min(58vh, 480px);
   max-width: 100%;
+  overflow: hidden;
 }
 
 .cart-preview-watermark-frame::after {
@@ -3404,7 +3656,7 @@ button:hover {
   }
 
   .cart-item {
-    grid-template-columns: 140px minmax(0, 1fr);
+    grid-template-columns: minmax(132px, 160px) minmax(0, 1fr);
   }
 
   .footer-links {
@@ -3497,7 +3749,11 @@ button:hover {
   }
 
   .gallery-selection-poster {
-    padding: 12px;
+    padding: 6px;
+  }
+
+  .gallery-selection-poster.poster-sheet {
+    padding: clamp(4px, 1.2cqi, 8px) clamp(6px, 1.8cqi, 11px) clamp(4px, 1.2cqi, 8px);
   }
 
   .gallery-card-title {

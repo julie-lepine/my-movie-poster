@@ -98,19 +98,19 @@
       </div>
 
       <aside class="gallery-selection-panel" aria-label="Sélection de films">
-        <div class="gallery-selection-poster">
-          <header class="gallery-selection-header">
-            <strong id="gallerySelectionTitle">Ma sélection</strong>
-            <span id="gallerySelectionSubtitle">Création personnalisée</span>
+        <div class="gallery-selection-poster poster-sheet" data-poster-layout="25">
+          <header class="poster-header">
+            <div id="gallerySelectionTitle" class="poster-title">Ma sélection</div>
+            <div id="gallerySelectionSubtitle" class="poster-subtitle">Création personnalisée</div>
           </header>
-          <div id="gallerySelectionGrid" class="gallery-selection-grid" aria-live="polite">
+          <div id="gallerySelectionGrid" class="poster-grid" data-layout="25" aria-live="polite">
             <p class="gallery-selection-empty">Coche des films pour composer ton poster.</p>
           </div>
-          <footer class="gallery-selection-footer" aria-label="Marque">
-            <img src="./assets/site/logo.png" alt="My Movies Poster" loading="lazy" decoding="async" />
+          <footer class="poster-footer" aria-label="Marque">
+            <img class="poster-footer-logo" src="./assets/site/logo.png" alt="My Movies Poster" loading="lazy" decoding="async" />
           </footer>
         </div>
-        <p id="gallerySelectionCount" class="gallery-selection-count">0 film sélectionné</p>
+        <p id="gallerySelectionCount" class="gallery-selection-count">0/100 film sélectionné</p>
         <button id="galleryCustomizeOpen" class="gallery-customize-open" type="button" aria-controls="galleryCustomizeModal">
           Personnaliser
         </button>
@@ -146,8 +146,8 @@
         <option value="Georgia, 'Times New Roman', serif">Georgia</option>
       </select>
 
-      <label for="galleryTitleSizeInput">Taille du titre <span id="galleryTitleSizeValue">24</span> px</label>
-      <input id="galleryTitleSizeInput" class="poster-editor-range" type="range" min="12" max="44" value="24" step="1" />
+      <label for="galleryTitleSizeInput">Taille du titre <span id="galleryTitleSizeValue">34</span> px</label>
+      <input id="galleryTitleSizeInput" class="poster-editor-range" type="range" min="12" max="96" value="34" step="1" />
 
       <label for="galleryTitleColorInput">Couleur du titre</label>
       <input id="galleryTitleColorInput" class="poster-editor-color" type="color" value="#25272d" />
@@ -172,8 +172,8 @@
         <option value="Georgia, 'Times New Roman', serif">Georgia</option>
       </select>
 
-      <label for="gallerySubtitleSizeInput">Taille du sous-titre <span id="gallerySubtitleSizeValue">11</span> px</label>
-      <input id="gallerySubtitleSizeInput" class="poster-editor-range" type="range" min="8" max="28" value="11" step="1" />
+      <label for="gallerySubtitleSizeInput">Taille du sous-titre <span id="gallerySubtitleSizeValue">22</span> px</label>
+      <input id="gallerySubtitleSizeInput" class="poster-editor-range" type="range" min="10" max="72" value="22" step="1" />
 
       <label for="gallerySubtitleColorInput">Couleur du sous-titre</label>
       <input id="gallerySubtitleColorInput" class="poster-editor-color" type="color" value="#5c606b" />

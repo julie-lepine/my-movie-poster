@@ -8,6 +8,9 @@ const galleryState = {
   filtersOpen: true,
 };
 
+const GALLERY_SELECTION_MAX_COUNT = 100;
+const GALLERY_CIRCLE_SRC = "./assets/site/circle.png";
+
 var galleryTextCustomizer = null;
 var galleryCustomizePreviewFrame = 0;
 
@@ -86,6 +89,11 @@ function toGalleryArray(value) {
 
 function getGalleryFilmId(film) {
   return `${film.titre || ""}::${film.year || ""}::${film.image || ""}`;
+}
+
+function getGalleryThumbnailSrc(src) {
+  if (!src || src.includes("/thumbs/")) return src || "";
+  return src.replace(/(^|\/)assets\/img\//, "$1assets/img/thumbs/");
 }
 
 function isGalleryFilmSelected(film) {
@@ -197,8 +205,14 @@ function toggleGalleryFilmSelection(film) {
 
   if (existingIndex >= 0) {
     galleryState.selectedFilms.splice(existingIndex, 1);
+    setGalleryCartFeedback("");
   } else {
+    if (galleryState.selectedFilms.length >= GALLERY_SELECTION_MAX_COUNT) {
+      setGalleryCartFeedback(`La sélection est limitée à ${GALLERY_SELECTION_MAX_COUNT} films.`);
+      return;
+    }
     galleryState.selectedFilms.push(film);
+    setGalleryCartFeedback("");
   }
 
   renderGalleryGrid();
@@ -206,11 +220,20 @@ function toggleGalleryFilmSelection(film) {
 }
 
 function selectFilteredGalleryFilms() {
+  let addedCount = 0;
   galleryState.filteredFilms.forEach((film) => {
+    if (galleryState.selectedFilms.length >= GALLERY_SELECTION_MAX_COUNT) return;
     if (!isGalleryFilmSelected(film)) {
       galleryState.selectedFilms.push(film);
+      addedCount++;
     }
   });
+
+  if (galleryState.selectedFilms.length >= GALLERY_SELECTION_MAX_COUNT) {
+    setGalleryCartFeedback(`Sélection limitée à ${GALLERY_SELECTION_MAX_COUNT} films maximum.`);
+  } else if (addedCount > 0) {
+    setGalleryCartFeedback("");
+  }
 
   renderGalleryGrid();
   renderGallerySelection();
@@ -218,7 +241,12 @@ function selectFilteredGalleryFilms() {
 
 function syncGallerySelectFilteredButton() {
   const button = document.getElementById("gallerySelectFiltered");
-  if (button) button.disabled = galleryState.filteredFilms.length === 0;
+  if (!button) return;
+  const hasSelectableFilm = galleryState.filteredFilms.some((film) => !isGalleryFilmSelected(film));
+  button.disabled =
+    galleryState.filteredFilms.length === 0 ||
+    !hasSelectableFilm ||
+    galleryState.selectedFilms.length >= GALLERY_SELECTION_MAX_COUNT;
 }
 
 function syncGallerySelectionActionButtons() {
@@ -229,6 +257,7 @@ function syncGallerySelectionActionButtons() {
 
 function clearGallerySelection() {
   galleryState.selectedFilms = [];
+  setGalleryCartFeedback("");
   renderGalleryGrid();
   renderGallerySelection();
 }
@@ -271,9 +300,12 @@ function createGalleryCard(film) {
   selectButton.type = "button";
   selectButton.className = "gallery-select-toggle";
   selectButton.setAttribute("aria-pressed", String(selected));
+  selectButton.disabled = !selected && galleryState.selectedFilms.length >= GALLERY_SELECTION_MAX_COUNT;
   selectButton.setAttribute(
     "aria-label",
-    selected ? `Retirer ${film.titre} de la sélection` : `Ajouter ${film.titre} à la sélection`
+    selected
+      ? `Retirer ${film.titre} de la sélection`
+      : `Ajouter ${film.titre} à la sélection`
   );
   selectButton.addEventListener("click", () => toggleGalleryFilmSelection(film));
 
@@ -314,33 +346,44 @@ function renderGalleryGrid() {
   }
 }
 
-function createGallerySelectionItem(film) {
+function createGallerySelectionItem(film, layoutCount) {
   const item = document.createElement("div");
-  item.className = "gallery-selection-film";
+  item.className = "poster-film";
 
   const img = document.createElement("img");
-  img.src = film.image;
+  img.src = layoutCount === 100 ? getGalleryThumbnailSrc(film.image) : film.image;
+  if (layoutCount === 100) img.dataset.fallbackSrc = film.image;
   img.alt = "";
-  img.loading = "lazy";
+  img.loading = "eager";
   img.decoding = "async";
+  img.addEventListener(
+    "error",
+    () => {
+      if (!img.dataset.fallbackSrc) return;
+      img.src = img.dataset.fallbackSrc;
+      delete img.dataset.fallbackSrc;
+    },
+    { passive: true }
+  );
   protectImageElement(img);
 
   const info = document.createElement("div");
-  info.className = "gallery-selection-film-info";
+  info.className = "film-info";
 
   const circle = document.createElement("img");
-  circle.className = "gallery-selection-film-circle";
-  circle.src = "./assets/site/circle.png";
+  circle.className = "film-circle";
+  circle.src = galleryState.customization?.filmCircleSrc || GALLERY_CIRCLE_SRC;
   circle.alt = "";
   circle.decoding = "async";
   protectImageElement(circle);
 
-  const title = document.createElement("span");
-  title.className = "gallery-selection-film-title";
+  const title = document.createElement("div");
+  title.className = "film-title";
   title.textContent = film.titre;
+  title.title = film.titre;
 
-  const year = document.createElement("span");
-  year.className = "gallery-selection-film-year";
+  const year = document.createElement("div");
+  year.className = "film-year";
   year.textContent = film.year || "";
 
   info.appendChild(circle);
@@ -352,22 +395,12 @@ function createGallerySelectionItem(film) {
   return item;
 }
 
-function getGallerySelectionColumnCount(count) {
-  if (count <= 1) return 1;
-  if (count <= 4) return 2;
-  if (count <= 9) return 3;
-  if (count <= 16) return 4;
-  if (count <= 25) return 5;
-  return 6;
-}
-
-function getGallerySelectionRowHeight(columnCount) {
-  if (columnCount <= 1) return 210;
-  if (columnCount <= 2) return 168;
-  if (columnCount <= 3) return 136;
-  if (columnCount <= 4) return 116;
-  if (columnCount <= 5) return 104;
-  return 92;
+function getGallerySelectionLayout(count) {
+  if (count <= 25) {
+    return { layoutCount: 25, cols: Math.min(5, Math.max(1, count || 5)), gap: 18 };
+  }
+  if (count <= 48) return { layoutCount: 48, cols: 6, gap: 14 };
+  return { layoutCount: 100, cols: 10, gap: 7 };
 }
 
 function renderGallerySelection() {
@@ -378,25 +411,28 @@ function renderGallerySelection() {
 
   const selectedCount = galleryState.selectedFilms.length;
   if (count) {
-    count.textContent = `${selectedCount} film${selectedCount > 1 ? "s" : ""} sélectionné${
+    count.textContent = `${selectedCount}/${GALLERY_SELECTION_MAX_COUNT} film${
       selectedCount > 1 ? "s" : ""
-    }`;
+    } sélectionné${selectedCount > 1 ? "s" : ""}`;
   }
   document.querySelectorAll("#gallerySideAddToCart").forEach((button) => {
     button.disabled = selectedCount === 0;
   });
   syncGallerySelectionActionButtons();
+  syncGallerySelectFilteredButton();
 
   grid.innerHTML = "";
-  const columnCount = getGallerySelectionColumnCount(selectedCount);
-  const rowCount = Math.max(1, Math.ceil(selectedCount / columnCount));
+  const layout = getGallerySelectionLayout(selectedCount);
+  const rowCount = Math.max(1, Math.ceil(Math.max(selectedCount, 1) / layout.cols));
   const styleTarget = poster || grid;
-  styleTarget.style.setProperty("--gallery-selection-cols", String(columnCount));
-  styleTarget.style.setProperty("--gallery-selection-rows", String(rowCount));
-  styleTarget.style.setProperty(
-    "--gallery-selection-row-height",
-    `${getGallerySelectionRowHeight(columnCount)}px`
-  );
+  if (poster) poster.dataset.posterLayout = String(layout.layoutCount);
+  grid.dataset.layout = String(layout.layoutCount);
+  grid.style.setProperty("--poster-cols", String(layout.cols));
+  grid.style.setProperty("--poster-rows", String(rowCount));
+  grid.style.setProperty("--poster-gap", `${layout.gap}px`);
+  styleTarget.style.setProperty("--poster-cols", String(layout.cols));
+  styleTarget.style.setProperty("--poster-rows", String(rowCount));
+  styleTarget.style.setProperty("--poster-gap", `${layout.gap}px`);
 
   if (!selectedCount) {
     const empty = document.createElement("p");
@@ -409,7 +445,7 @@ function renderGallerySelection() {
 
   const fragment = document.createDocumentFragment();
   galleryState.selectedFilms.forEach((film) => {
-    fragment.appendChild(createGallerySelectionItem(film));
+    fragment.appendChild(createGallerySelectionItem(film, layout.layoutCount));
   });
   grid.appendChild(fragment);
   scheduleGalleryCustomizePreview();
@@ -441,12 +477,14 @@ function isGalleryCustomizerEventInsideCard(event, card) {
 
 async function addGallerySelectionToCart() {
   if (!galleryState.selectedFilms.length) return;
+  const filmsToShow = galleryState.selectedFilms.slice(0, GALLERY_SELECTION_MAX_COUNT);
 
   const cartItem = {
     type: "selection-poster",
     addedAt: new Date().toISOString(),
     customization: galleryTextCustomizer?.getState() || galleryState.customization,
-    films: galleryState.selectedFilms.map((film) => ({
+    layoutCount: getGallerySelectionLayout(filmsToShow.length).layoutCount,
+    films: filmsToShow.map((film) => ({
       titre: film.titre,
       year: film.year,
       image: film.image,
@@ -484,8 +522,8 @@ function setupGalleryCustomizer() {
       subtitleFont:
         document.getElementById("gallerySubtitleFontSelect")?.value ||
         "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-      titleSize: 24,
-      subtitleSize: 11,
+      titleSize: 34,
+      subtitleSize: 22,
       titleColor: "#25272d",
       subtitleColor: "#5c606b",
       backgroundImage: "",
@@ -518,7 +556,8 @@ function setupGalleryCustomizer() {
       },
     },
     targets: {
-      mode: "inline",
+      mode: "cssVars",
+      root: ".gallery-selection-poster",
       background: ".gallery-selection-poster",
       title: "gallerySelectionTitle",
       subtitle: "gallerySelectionSubtitle",

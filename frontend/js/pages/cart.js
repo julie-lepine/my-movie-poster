@@ -29,6 +29,18 @@ const CART_DEFAULT_BACKGROUND = "";
 const CART_LOGO_SRC = "./assets/site/logo.png";
 const CART_CIRCLE_SRC = "./assets/site/circle.png";
 
+var _mppCartPreviewResizeTimer = 0;
+
+function onCartPreviewWindowResize() {
+  clearTimeout(_mppCartPreviewResizeTimer);
+  _mppCartPreviewResizeTimer = window.setTimeout(() => {
+    const modal = document.getElementById("cartPreviewModal");
+    if (!modal || modal.hidden) return;
+    const frame = modal.querySelector(".cart-live-poster-frame");
+    if (frame) syncCartLivePosterFrame(frame);
+  }, 150);
+}
+
 function getCartThumbnailSrc(src) {
   if (!src || src.includes("/thumbs/")) return src || "";
   return src.replace(/(^|\/)assets\/img\//, "$1assets/img/thumbs/");
@@ -159,6 +171,14 @@ function getCartQuizLayout(layoutCount) {
     100: { cols: 10, gap: 7 },
   };
   return layoutByCount[layoutCount] || layoutByCount[100];
+}
+
+function getCartSelectionLayout(filmCount) {
+  if (filmCount <= 25) {
+    return { layoutCount: 25, cols: Math.min(5, Math.max(1, filmCount || 5)), gap: 18 };
+  }
+  if (filmCount <= 48) return { layoutCount: 48, cols: 6, gap: 14 };
+  return { layoutCount: 100, cols: 10, gap: 7 };
 }
 
 function createCartQuizPosterPreview(item) {
@@ -299,34 +319,41 @@ function getCartSelectionRowHeight(columnCount) {
 
 function createCartSelectionPosterPreview(item) {
   const customization = item.customization || {};
-  const films = item.films || [];
+  const films = (item.films || []).filter((film) => film?.image).slice(0, 100);
   const poster = document.createElement("article");
-  poster.className = "gallery-selection-poster";
-  poster.style.width = "340px";
+  poster.className = "gallery-selection-poster poster-sheet";
   setCartBackground(poster, customization);
 
   const header = document.createElement("header");
-  header.className = "gallery-selection-header";
+  header.className = "poster-header";
 
-  const title = document.createElement("strong");
+  const title = document.createElement("div");
+  title.className = "poster-title";
   title.textContent = getCartItemTitle(item);
-  setCartTextStyle(title, customization, "title");
 
-  const subtitle = document.createElement("span");
+  const subtitle = document.createElement("div");
+  subtitle.className = "poster-subtitle";
   subtitle.textContent = getCartItemSubtitle(item);
-  setCartTextStyle(subtitle, customization, "subtitle");
 
   const grid = document.createElement("div");
-  grid.className = "gallery-selection-grid";
-  const columnCount = getCartSelectionColumnCount(films.length);
-  const rowCount = Math.max(1, Math.ceil(films.length / columnCount));
-  poster.style.setProperty("--gallery-selection-cols", String(columnCount));
-  poster.style.setProperty("--gallery-selection-rows", String(rowCount));
-  poster.style.setProperty("--gallery-selection-row-height", `${getCartSelectionRowHeight(columnCount)}px`);
+  grid.className = "poster-grid";
+  const layout = getCartSelectionLayout(films.length);
+  const rowCount = Math.max(1, Math.ceil(Math.max(films.length, 1) / layout.cols));
+  poster.dataset.posterLayout = String(layout.layoutCount);
+  grid.dataset.layout = String(layout.layoutCount);
+  grid.style.setProperty("--poster-cols", String(layout.cols));
+  grid.style.setProperty("--poster-rows", String(rowCount));
+  grid.style.setProperty("--poster-gap", `${layout.gap}px`);
 
   if (films.length) {
     films.forEach((film) => {
-      grid.appendChild(createCartSelectionFilmCard(film));
+      grid.appendChild(
+        createCartQuizFilmCard({
+          ...film,
+          circleSrc: customization.filmCircleSrc || CART_CIRCLE_SRC,
+          previewImage: layout.layoutCount === 100 ? getCartThumbnailSrc(film.image) : film.image,
+        })
+      );
     });
   } else {
     const empty = document.createElement("p");
@@ -336,9 +363,10 @@ function createCartSelectionPosterPreview(item) {
   }
 
   const footer = document.createElement("footer");
-  footer.className = "gallery-selection-footer";
+  footer.className = "poster-footer";
   footer.setAttribute("aria-label", "Marque");
   const logo = document.createElement("img");
+  logo.className = "poster-footer-logo";
   logo.src = CART_LOGO_SRC;
   logo.alt = "My Movies Poster";
   logo.decoding = "async";
@@ -350,6 +378,7 @@ function createCartSelectionPosterPreview(item) {
   poster.appendChild(header);
   poster.appendChild(grid);
   poster.appendChild(footer);
+  applyCartQuizTextStyles(poster, title, subtitle, customization);
 
   return poster;
 }
@@ -439,23 +468,65 @@ function sizeCartLivePosterFrame(frame) {
 
   const mode = frame.dataset.cartPreviewMode;
   const isThumbnail = mode === "thumbnail";
-  const baseWidth = poster.offsetWidth || (frame.dataset.cartPosterType === "selection-poster" ? 340 : 1587);
-  const baseHeight = poster.offsetHeight || (frame.dataset.cartPosterType === "selection-poster" ? 520 : 2245);
-  const availableWidth = Math.max(1, host.clientWidth || (isThumbnail ? 180 : 520));
+  const isSelection = frame.dataset.cartPosterType === "selection-poster";
+  const selectionFallbackW = 340;
+  const selectionFallbackH = Math.round((selectionFallbackW * 594) / 420);
+
+  const rect = poster.getBoundingClientRect();
+  let baseWidth = Math.round(rect.width) || poster.offsetWidth;
+  let baseHeight = Math.round(rect.height) || poster.offsetHeight;
+
+  if (isSelection) {
+    if (baseWidth > 24 && (!baseHeight || baseHeight < 24)) {
+      baseHeight = Math.round((baseWidth * 594) / 420);
+    } else if (baseHeight > 24 && (!baseWidth || baseWidth < 24)) {
+      baseWidth = Math.round((baseHeight * 420) / 594);
+    }
+    if (!baseWidth || !baseHeight || baseWidth < 24 || baseHeight < 24) {
+      baseWidth = selectionFallbackW;
+      baseHeight = selectionFallbackH;
+    }
+  } else if (!baseWidth || !baseHeight) {
+    baseWidth = baseWidth || 1587;
+    baseHeight = baseHeight || 2245;
+  }
+
+  const sizingHost =
+    !isThumbnail && host.closest?.(".cart-preview-content") ? host.closest(".cart-preview-content") : host;
+
+  const thumbFallback = 200;
+  const availableWidth = Math.max(1, sizingHost.clientWidth || (isThumbnail ? thumbFallback : 520));
   const availableHeight = Math.max(
     1,
-    isThumbnail ? host.clientHeight || availableWidth : Math.min(window.innerHeight * 0.78, 760)
+    isThumbnail
+      ? sizingHost.clientHeight || sizingHost.clientWidth || availableWidth
+      : Math.min(
+          window.innerHeight * 0.78 - 100,
+          Math.max(sizingHost.clientHeight, window.innerHeight * 0.5),
+          820
+        )
   );
   const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight, 1);
+  if (!Number.isFinite(scale) || scale <= 0) return;
 
-  frame.style.width = `${Math.ceil(baseWidth * scale)}px`;
-  frame.style.height = `${Math.ceil(baseHeight * scale)}px`;
+  const nextW = Math.max(1, Math.ceil(baseWidth * scale));
+  const nextH = Math.max(1, Math.ceil(baseHeight * scale));
+
+  frame.style.width = `${nextW}px`;
+  frame.style.height = `${nextH}px`;
   poster.style.transform = `scale(${scale})`;
 }
 
 function syncCartLivePosterFrame(frame) {
   const poster = frame.firstElementChild;
-  if (poster?.classList.contains("poster-sheet")) syncCartQuizPosterMetrics(poster);
+  const mode = frame.dataset.cartPreviewMode;
+  if (
+    mode === "modal" &&
+    poster?.classList.contains("poster-sheet") &&
+    !poster.classList.contains("gallery-selection-poster")
+  ) {
+    syncCartQuizPosterMetrics(poster);
+  }
   sizeCartLivePosterFrame(frame);
 }
 
@@ -464,9 +535,19 @@ function scheduleCartLivePosterFrame(frame) {
   if (document.fonts?.ready) document.fonts.ready.then(run);
   else run();
 
+  let imgReflowTimer = 0;
+  const onImgProgress = () => {
+    clearTimeout(imgReflowTimer);
+    imgReflowTimer = window.setTimeout(run, 60);
+  };
   frame.querySelectorAll("img").forEach((img) => {
-    if (!img.complete) img.addEventListener("load", run, { passive: true, once: true });
+    if (!img.complete) img.addEventListener("load", onImgProgress, { passive: true });
   });
+
+  if (frame._mppCartPosterRO) {
+    frame._mppCartPosterRO.disconnect();
+    frame._mppCartPosterRO = null;
+  }
 }
 
 function openCartPreview(item) {
@@ -482,10 +563,17 @@ function openCartPreview(item) {
   previewFrame.appendChild(livePreview);
   content.appendChild(previewFrame);
   scheduleCartLivePosterFrame(livePreview);
+  requestAnimationFrame(() => syncCartLivePosterFrame(livePreview));
+  window.removeEventListener("resize", onCartPreviewWindowResize);
+  window.addEventListener("resize", onCartPreviewWindowResize);
   document.getElementById("cartPreviewClose")?.focus();
 }
 
 function closeCartPreview() {
+  window.removeEventListener("resize", onCartPreviewWindowResize);
+  clearTimeout(_mppCartPreviewResizeTimer);
+  _mppCartPreviewResizeTimer = 0;
+
   const modal = document.getElementById("cartPreviewModal");
   if (modal) modal.hidden = true;
 }
