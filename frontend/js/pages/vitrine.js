@@ -446,13 +446,6 @@ function createGalleryCard(film) {
   );
   selectButton.addEventListener("click", () => toggleGalleryFilmSelection(film));
 
-  const selectIcon = document.createElement("img");
-  selectIcon.src = "./assets/site/circle.png";
-  selectIcon.alt = "";
-  selectIcon.decoding = "async";
-  protectImageElement(selectIcon);
-  selectButton.appendChild(selectIcon);
-
   card.appendChild(preview);
   card.appendChild(selectButton);
 
@@ -548,7 +541,7 @@ function renderGallerySelection() {
 
   const selectedCount = galleryState.selectedFilms.length;
   if (count) {
-    count.textContent = `${selectedCount}/${GALLERY_SELECTION_MAX_COUNT} film${
+    count.textContent = `${selectedCount} film${
       selectedCount > 1 ? "s" : ""
     } sélectionné${selectedCount > 1 ? "s" : ""}`;
   }

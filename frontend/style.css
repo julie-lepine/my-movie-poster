@@ -676,15 +676,16 @@ img {
   right: 8px;
   bottom: 8px;
   z-index: 3;
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   margin: 0;
-  padding: 4px;
+  padding: 0;
+  box-sizing: border-box;
   display: grid;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.84);
+  background: #ffffff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
   cursor: pointer;
 }
@@ -694,11 +695,10 @@ img {
   filter: brightness(1.06);
 }
 
-.gallery-select-toggle img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
+.gallery-select-toggle[aria-pressed="true"] {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
 }
 
 .gallery-select-toggle::after {
@@ -716,8 +716,11 @@ img {
   content: "✓";
   display: grid;
   place-items: center;
-  color: #fff;
-  font-size: 13px;
+  inset: 0;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 8px;
   font-weight: 900;
   line-height: 1;
   opacity: 1;
@@ -725,7 +728,7 @@ img {
 }
 
 .gallery-card.is-selected .gallery-select-toggle {
-  border-color: rgba(28, 168, 227, 0.9);
+  border-color: var(--accent-2);
 }
 
 .gallery-empty {
@@ -1137,6 +1140,13 @@ img {
   z-index: 6;
 }
 
+.customize-live-preview > .gallery-customize-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 25;
+}
+
 .customize-live-card > .customize-live-preview {
   height: 100%;
   min-height: 0;
@@ -1144,6 +1154,7 @@ img {
 }
 
 .customize-live-preview {
+  position: relative;
   min-width: 0;
   min-height: 0;
   padding: 18px;
@@ -2229,7 +2240,7 @@ img {
   color: #fff;
 }
 
-.poster-editor > button {
+.poster-editor > button:not(.gallery-customize-close) {
   width: 100%;
   margin: 14px 0 0 0;
 }

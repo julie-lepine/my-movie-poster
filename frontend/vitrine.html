@@ -134,7 +134,7 @@
           </article>
         </div>
 
-        <p id="gallerySelectionCount" class="gallery-selection-count">0/100 film sélectionné</p>
+        <p id="gallerySelectionCount" class="gallery-selection-count">0 film sélectionné</p>
         <button id="gallerySquareFrameOpen" class="gallery-customize-open gallery-square-frame-open" type="button" aria-controls="gallerySquareFrameModal" hidden>
           Personnaliser le cadre
         </button>
@@ -152,7 +152,6 @@
   <div id="gallerySquareFrameModal" class="gallery-customize-modal gallery-square-frame-modal" hidden role="dialog" aria-modal="true" aria-labelledby="gallerySquareFrameModalTitle">
     <div id="gallerySquareFrameCard" class="customize-live-card gallery-square-frame-card">
       <section class="gallery-customize-card poster-editor customize-controls">
-        <button id="gallerySquareFrameClose" class="gallery-customize-close" type="button" aria-label="Fermer">×</button>
         <h3 id="gallerySquareFrameModalTitle">Cadre du poster</h3>
         <p class="gallery-square-frame-hint">Choisis la couleur du cadre autour de l’affiche (défaut&nbsp;: blanc).</p>
         <label for="gallerySquareFrameColorInput"><strong>Couleur du cadre</strong></label>
@@ -160,6 +159,7 @@
         <button id="gallerySquareFrameValidate" class="gallery-add-to-cart" type="button">Valider</button>
       </section>
       <aside class="customize-live-preview gallery-square-frame-live-preview" aria-label="Aperçu">
+        <button id="gallerySquareFrameClose" class="gallery-customize-close" type="button" aria-label="Fermer">×</button>
         <div class="gallery-square-watermark-wrap gallery-square-watermark-wrap--modal">
           <article id="gallerySquareFrameModalPreview" class="gallery-square-poster mpp-square-frame-poster" aria-hidden="true">
             <div class="gallery-square-poster__image-slot">
@@ -179,7 +179,6 @@
   <div id="galleryCustomizeModal" class="gallery-customize-modal" hidden role="dialog" aria-modal="true" aria-labelledby="galleryCustomizeTitle">
     <div id="galleryCustomizeCard" class="customize-live-card">
       <section class="gallery-customize-card poster-editor customize-controls">
-      <button id="galleryCustomizeClose" class="gallery-customize-close" type="button" aria-label="Fermer la personnalisation">×</button>
       <h3 id="galleryCustomizeTitle">Personnaliser</h3>
 
       <label for="galleryTitleInput"><strong>Titre</strong></label>
@@ -251,6 +250,7 @@
       <p id="galleryCartFeedback" class="gallery-cart-feedback" aria-live="polite"></p>
       </section>
       <aside class="customize-live-preview" aria-label="Aperçu du poster en direct">
+        <button id="galleryCustomizeClose" class="gallery-customize-close" type="button" aria-label="Fermer la personnalisation">×</button>
         <div id="galleryCustomizePreview" class="customize-live-preview-inner poster-preview-watermark"></div>
       </aside>
     </div>
