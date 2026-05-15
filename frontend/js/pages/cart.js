@@ -809,7 +809,7 @@ function isCartGalleryStylePoster(poster) {
   return poster?.classList.contains("gallery-selection-poster");
 }
 
-/** Modal vitrine — gabarit 340px + scale (inchangé). */
+/** Modal vitrine — gabarit 340px ; scale jusqu’à remplir la zone (pas plafonné à 1). */
 function sizeCartLivePosterFrame(frame) {
   const poster = frame.firstElementChild;
   const host = frame.parentElement;
@@ -820,7 +820,7 @@ function sizeCartLivePosterFrame(frame) {
   if (posterType === "square-frame-poster") {
     const sizingHost = host.closest?.(".cart-preview-content") || host;
     const hostRect = sizingHost.getBoundingClientRect();
-    const previewPad = 40;
+    const previewPad = 28;
 
     prepareCartSquarePosterForMeasure(poster);
     void poster.offsetWidth;
@@ -835,7 +835,7 @@ function sizeCartLivePosterFrame(frame) {
       1,
       (Math.floor(hostRect.height) || sizingHost.clientHeight || availableWidth) - previewPad * 2
     );
-    const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight, 1);
+    const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
     if (!Number.isFinite(scale) || scale <= 0) return;
 
     frame.style.width = "100%";
@@ -852,7 +852,7 @@ function sizeCartLivePosterFrame(frame) {
 
   const sizingHost = host.closest?.(".cart-preview-content") || host;
   const hostRect = sizingHost.getBoundingClientRect();
-  const previewPad = 40;
+  const previewPad = 28;
 
   prepareCartGalleryPosterForMeasure(poster);
   void poster.offsetWidth;
@@ -869,7 +869,7 @@ function sizeCartLivePosterFrame(frame) {
     (Math.floor(hostRect.height) || sizingHost.clientHeight || availableWidth) -
       previewPad * 2
   );
-  const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight, 1);
+  const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
   if (!Number.isFinite(scale) || scale <= 0) return;
 
   frame.style.width = "100%";
@@ -1030,9 +1030,9 @@ function syncCartQuizModalPreview(host, poster) {
     sizingEl: host.closest(".cart-preview-content"),
     fallbackWidth: api.POSTER_A2_FALLBACK_W,
     fallbackHeight: api.POSTER_A2_FALLBACK_H,
-    maxFitScale: 0.72,
-    horizontalPad: 48,
-    verticalPad: 56,
+    maxFitScale: 1,
+    horizontalPad: 40,
+    verticalPad: 48,
     transformOrigin: "top left",
   });
 }

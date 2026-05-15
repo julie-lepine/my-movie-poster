@@ -1096,13 +1096,14 @@ img {
 }
 
 .customize-live-card {
-  width: min(980px, calc(100vw - 48px));
-  max-height: min(86vh, 760px);
-  height: min(86vh, 760px);
+  width: min(1120px, calc(100vw - 48px));
+  max-height: min(92vh, 980px);
+  height: min(92vh, 980px);
   display: grid;
   grid-template-columns: minmax(280px, 380px) minmax(280px, 1fr);
-  gap: 18px;
+  gap: 14px;
   align-items: stretch;
+  box-sizing: border-box;
 }
 
 /* Mon poster : fermeture visible au coin de toute la modale (pas seulement la colonne formulaire). */
@@ -1125,7 +1126,7 @@ img {
   position: relative;
   width: 100%;
   min-width: 0;
-  max-height: min(86vh, 760px);
+  max-height: min(92vh, 980px);
   overflow: auto;
 }
 
@@ -4068,20 +4069,24 @@ button:hover {
 
 .cart-preview-card {
   position: relative;
-  width: min(760px, calc(100vw - 36px));
-  max-height: min(92vh, 920px);
+  width: min(1120px, calc(100vw - 48px));
+  max-height: min(92vh, 980px);
+  height: min(92vh, 980px);
   padding: 22px;
+  box-sizing: border-box;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   justify-items: center;
-  gap: 16px;
+  gap: 14px;
   overflow: auto;
+  border-radius: 18px;
   background: #fff;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
 }
 
 .cart-preview-card h2 {
   margin: 0;
+  padding-right: 44px;
   font-family: "Montserrat", "Segoe UI", sans-serif;
   font-size: 22px;
   text-transform: uppercase;
@@ -4089,14 +4094,14 @@ button:hover {
 
 .cart-preview-close.gallery-customize-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
   z-index: 6;
 }
 
 .cart-preview-content {
   width: 100%;
-  min-height: min(62vh, 520px);
+  min-height: 0;
   height: 100%;
   max-width: 100%;
   min-width: 0;
@@ -4108,10 +4113,11 @@ button:hover {
 
 .cart-preview-content > .cart-preview-watermark-frame {
   flex: 1 1 auto;
+  align-self: stretch;
   width: 100%;
   height: 100%;
   min-height: 0;
-  align-self: stretch;
+  max-height: 100%;
 }
 
 .cart-preview-watermark-frame {
@@ -4123,7 +4129,8 @@ button:hover {
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
-  min-height: min(58vh, 480px);
+  min-height: 0;
+  flex: 1 1 auto;
   overflow: hidden;
 }
 
@@ -4424,7 +4431,7 @@ button:hover {
   .customize-live-card {
     grid-template-columns: 1fr;
     height: auto;
-    max-height: min(92vh, 860px);
+    max-height: min(92vh, 980px);
     overflow: auto;
   }
 
