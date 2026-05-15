@@ -439,13 +439,34 @@ function sizePosterLargePreviewClone(clone) {
   const modal = document.getElementById("posterLargePreviewModal");
   const content = document.getElementById("posterLargePreviewContent");
   const posterEl = document.getElementById("posterContainer");
+  const api = window.MppPosterPreviewHost;
   if (!modal || !content || !posterEl || !clone) return;
 
   const card = modal.querySelector(".poster-large-preview-card");
+  const zoomControls = modal.querySelector(".poster-large-preview-zoom-controls");
   const baseWidth = posterEl.offsetWidth || 1587;
   const baseHeight = posterEl.offsetHeight || 2245;
+
+  if (api) {
+    api.preparePosterSheetForA2Measure(clone);
+    void clone.offsetWidth;
+    api.syncPosterSheetLayoutMetrics(clone);
+    void clone.offsetWidth;
+    api.sizePosterSheetInHost(clone, content, {
+      sizingEl: card,
+      fallbackWidth: baseWidth,
+      fallbackHeight: baseHeight,
+      maxFitScale: 0.72 * posterLargePreviewZoom,
+      horizontalPad: 56,
+      verticalPad: 70 + (zoomControls?.offsetHeight || 0),
+      hostMaxWidth: "none",
+      hostMaxHeight: "none",
+      transformOrigin: "top left",
+    });
+    return;
+  }
+
   const availableWidth = Math.max(280, (card?.clientWidth || window.innerWidth * 0.92) - 56);
-  const zoomControls = modal.querySelector(".poster-large-preview-zoom-controls");
   const availableHeight = Math.max(
     360,
     (card?.clientHeight || window.innerHeight * 0.9) - 70 - (zoomControls?.offsetHeight || 0)

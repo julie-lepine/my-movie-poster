@@ -8,7 +8,7 @@ function protectImageElement(img) {
 }
 
 function setupImageDownloadDissuasion() {
-  document.querySelectorAll("img").forEach(protectImageElement);
+  document.querySelectorAll("header img, footer img, .site-services img").forEach(protectImageElement);
 
   document.addEventListener(
     "contextmenu",

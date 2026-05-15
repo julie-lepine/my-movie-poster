@@ -28,14 +28,32 @@ function getCartItemSubtitle(item) {
 const CART_DEFAULT_BACKGROUND = "";
 const CART_LOGO_SRC = "./assets/site/logo.png";
 const CART_CIRCLE_SRC = "./assets/site/circle.png";
+/** Même gabarit d’aperçu que la vitrine (px). */
+const CART_GALLERY_PREVIEW_W = 340;
+const CART_GALLERY_PREVIEW_H = Math.round((CART_GALLERY_PREVIEW_W * 594) / 420);
 
 var _mppCartPreviewResizeTimer = 0;
+var _cartModalPreviewGen = 0;
+var _cartModalPreviewImgTimer = 0;
+var _cartModalPreviewUpgradeTimer = 0;
+const CART_MODAL_UPGRADE_BATCH = 12;
+var _cartThumbIo = null;
+var _cartThumbRootRo = null;
+var _cartThumbLayoutTimer = 0;
+var _cartThumbImgTimer = 0;
+var _cartThumbFontsReady = false;
 
 function onCartPreviewWindowResize() {
   clearTimeout(_mppCartPreviewResizeTimer);
   _mppCartPreviewResizeTimer = window.setTimeout(() => {
     const modal = document.getElementById("cartPreviewModal");
     if (!modal || modal.hidden) return;
+    const quizHost = modal.querySelector(".cart-poster-preview-host");
+    if (quizHost) {
+      const poster = quizHost.querySelector(".poster-sheet");
+      if (poster) syncCartQuizModalPreview(quizHost, poster);
+      return;
+    }
     const frame = modal.querySelector(".cart-live-poster-frame");
     if (frame) syncCartLivePosterFrame(frame);
   }, 150);
@@ -44,6 +62,167 @@ function onCartPreviewWindowResize() {
 function getCartThumbnailSrc(src) {
   if (!src || src.includes("/thumbs/")) return src || "";
   return src.replace(/(^|\/)assets\/img\//, "$1assets/img/thumbs/");
+}
+
+function getCartFilmImageSrc(image, useThumb) {
+  const src = image || "";
+  return useThumb ? getCartThumbnailSrc(src) : src;
+}
+
+function getCartModalPreviewOptions() {
+  return { useFilmThumbs: true, deferFullSrc: true };
+}
+
+function protectCartImagesIn(root) {
+  if (!root) return;
+  root.querySelectorAll("img:not([data-mpp-img-protected])").forEach((img) => {
+    protectImageElement(img);
+    img.dataset.mppImgProtected = "1";
+  });
+}
+
+function teardownCartThumbObservers() {
+  if (_cartThumbIo) {
+    _cartThumbIo.disconnect();
+    _cartThumbIo = null;
+  }
+  if (_cartThumbRootRo) {
+    _cartThumbRootRo.disconnect();
+    _cartThumbRootRo = null;
+  }
+  clearTimeout(_cartThumbLayoutTimer);
+  clearTimeout(_cartThumbImgTimer);
+  _cartThumbLayoutTimer = 0;
+  _cartThumbImgTimer = 0;
+}
+
+function runWhenCartThumbFontsReady(fn) {
+  if (_cartThumbFontsReady) {
+    fn();
+    return;
+  }
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(() => {
+      _cartThumbFontsReady = true;
+      fn();
+    });
+  } else {
+    _cartThumbFontsReady = true;
+    fn();
+  }
+}
+
+function flushCartThumbnailLayout(frames) {
+  const list = frames.filter(Boolean);
+  if (!list.length) return;
+  runWhenCartThumbFontsReady(() => {
+    requestAnimationFrame(() => {
+      list.forEach((frame) => {
+        if (!frame.isConnected) return;
+        syncCartThumbnailPosterFrame(frame);
+        frame.dataset.cartThumbSized = "1";
+      });
+    });
+  });
+}
+
+function scheduleCartThumbnailLayoutBatch(frames) {
+  clearTimeout(_cartThumbLayoutTimer);
+  _cartThumbLayoutTimer = window.setTimeout(() => flushCartThumbnailLayout(frames), 48);
+}
+
+function layoutVisibleCartThumbnails(root) {
+  if (!root) return;
+  const frames = [];
+  root.querySelectorAll(".cart-thumb-poster-frame").forEach((frame) => {
+    if (frame.dataset.cartThumbSized === "1") return;
+    const item = frame.closest(".cart-item");
+    if (!item) return;
+    const rect = item.getBoundingClientRect();
+    if (rect.bottom < -40 || rect.top > window.innerHeight + 40) return;
+    frame.dataset.cartThumbSized = "1";
+    frames.push(frame);
+  });
+  flushCartThumbnailLayout(frames);
+}
+
+function initCartThumbIntersectionObserver(root) {
+  if (!root || typeof IntersectionObserver === "undefined") {
+    layoutVisibleCartThumbnails(root);
+    return;
+  }
+
+  if (_cartThumbIo) _cartThumbIo.disconnect();
+
+  _cartThumbIo = new IntersectionObserver(
+    (entries) => {
+      const batch = [];
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const frame = entry.target.querySelector(".cart-thumb-poster-frame");
+        if (!frame || frame.dataset.cartThumbSized === "1") return;
+        _cartThumbIo.unobserve(entry.target);
+        frame.dataset.cartThumbSized = "1";
+        batch.push(frame);
+      });
+      if (batch.length) scheduleCartThumbnailLayoutBatch(batch);
+    },
+    { root: null, rootMargin: "160px 0px", threshold: 0.02 }
+  );
+
+  root.querySelectorAll(".cart-item").forEach((item) => _cartThumbIo.observe(item));
+}
+
+function initCartThumbResizeObserver(root) {
+  if (!root || typeof ResizeObserver === "undefined") return;
+  if (_cartThumbRootRo) _cartThumbRootRo.disconnect();
+  _cartThumbRootRo = new ResizeObserver(() => {
+    clearTimeout(_cartThumbLayoutTimer);
+    _cartThumbLayoutTimer = window.setTimeout(() => {
+      const frames = [];
+      root.querySelectorAll(".cart-thumb-poster-frame[data-cart-thumb-sized='1']").forEach((frame) => {
+        if (frame.isConnected) frames.push(frame);
+      });
+      frames.forEach((frame) => {
+        delete frame.dataset.cartThumbSized;
+      });
+      flushCartThumbnailLayout(frames);
+    }, 120);
+  });
+  _cartThumbRootRo.observe(root);
+}
+
+function setupCartThumbImageReflow(root) {
+  if (!root || root._mppCartThumbImgHandler) return;
+  const onImgEvent = () => {
+    clearTimeout(_cartThumbImgTimer);
+    _cartThumbImgTimer = window.setTimeout(() => {
+      const frames = [];
+      root.querySelectorAll(".cart-thumb-poster-frame[data-cart-thumb-sized='1']").forEach((frame) => {
+        if (frame.isConnected) frames.push(frame);
+      });
+      if (frames.length) scheduleCartThumbnailLayoutBatch(frames);
+    }, 150);
+  };
+  root.addEventListener("load", onImgEvent, true);
+  root._mppCartThumbImgHandler = onImgEvent;
+}
+
+function startCartThumbPipeline(root) {
+  if (!root) return;
+  initCartThumbIntersectionObserver(root);
+  initCartThumbResizeObserver(root);
+  setupCartThumbImageReflow(root);
+  layoutVisibleCartThumbnails(root);
+}
+
+function scheduleCartThumbPipelineStart(root) {
+  const start = () => startCartThumbPipeline(root);
+  requestAnimationFrame(() => {
+    const idle = window.requestIdleCallback;
+    if (typeof idle === "function") idle(start, { timeout: 800 });
+    else window.setTimeout(start, 1);
+  });
 }
 
 function setCartTextStyle(el, customization = {}, scope) {
@@ -107,17 +286,28 @@ function applyCartQuizTextStyles(poster, title, subtitle, customization = {}) {
   setCartFormatClasses(subtitle, customization.subtitleFormat);
 }
 
-function createCartQuizFilmCard(film) {
+function createCartQuizFilmCard(film, options = {}) {
   const card = document.createElement("div");
   card.className = "poster-film";
+  const useThumbs = options.useFilmThumbs === true;
+  const fullSrc = film.image || "";
+  const displaySrc = film.previewImage || getCartFilmImageSrc(fullSrc, useThumbs);
 
   const img = document.createElement("img");
-  img.src = film.previewImage || film.image;
-  if (film.previewImage && film.previewImage !== film.image) {
-    img.dataset.fallbackSrc = film.image;
+  img.src = displaySrc;
+  if (options.deferFullSrc && fullSrc && displaySrc !== fullSrc) {
+    img.dataset.cartFullSrc = fullSrc;
+  } else if (displaySrc !== fullSrc && fullSrc) {
+    img.dataset.fallbackSrc = fullSrc;
   }
   img.alt = "";
   img.decoding = "async";
+  if (options.lazyImages) {
+    img.loading = "lazy";
+    img.fetchPriority = "low";
+  } else if (options.deferFullSrc) {
+    img.fetchPriority = "high";
+  }
   img.addEventListener(
     "error",
     () => {
@@ -146,6 +336,7 @@ function createCartQuizFilmCard(film) {
   circle.src = film.circleSrc || CART_CIRCLE_SRC;
   circle.alt = "";
   circle.decoding = "async";
+  if (options.lazyImages) circle.loading = "lazy";
   protectImageElement(circle);
 
   info.appendChild(circle);
@@ -181,9 +372,11 @@ function getCartSelectionLayout(filmCount) {
   return { layoutCount: 100, cols: 10, gap: 7 };
 }
 
-function createCartQuizPosterPreview(item) {
+function createCartQuizPosterPreview(item, previewOptions = {}) {
   const customization = item.customization || {};
   const films = item.films || [];
+  const useFilmThumbs = previewOptions.useFilmThumbs === true;
+  const lazyImages = previewOptions.lazyImages === true;
   const poster = document.createElement("article");
   poster.className = "poster-sheet";
   setCartBackground(poster, customization);
@@ -215,14 +408,9 @@ function createCartQuizPosterPreview(item) {
   const usesTail = layoutCount === 100 && films.length > 0;
   const tailStart = usesTail ? Math.min(films.length, layoutCount - (layoutCount % layout.cols)) : films.length;
   const circleSrc = customization.filmCircleSrc || CART_CIRCLE_SRC;
+  const cardOptions = { useFilmThumbs, lazyImages };
   films.slice(0, tailStart).forEach((film) => {
-    grid.appendChild(
-      createCartQuizFilmCard({
-        ...film,
-        circleSrc,
-        previewImage: layoutCount === 100 ? getCartThumbnailSrc(film.image) : film.image,
-      })
-    );
+    grid.appendChild(createCartQuizFilmCard({ ...film, circleSrc }, cardOptions));
   });
 
   if (usesTail && tailStart < films.length) {
@@ -230,13 +418,7 @@ function createCartQuizPosterPreview(item) {
     tail.className = "poster-grid-tail";
     tail.style.setProperty("--poster-tail-count", String(films.length - tailStart));
     films.slice(tailStart).forEach((film) => {
-      tail.appendChild(
-        createCartQuizFilmCard({
-          ...film,
-          circleSrc,
-          previewImage: layoutCount === 100 ? getCartThumbnailSrc(film.image) : film.image,
-        })
-      );
+      tail.appendChild(createCartQuizFilmCard({ ...film, circleSrc }, cardOptions));
     });
     grid.appendChild(tail);
   }
@@ -249,6 +431,7 @@ function createCartQuizPosterPreview(item) {
   logo.src = CART_LOGO_SRC;
   logo.alt = "My Movies Poster";
   logo.decoding = "async";
+  if (lazyImages) logo.loading = "lazy";
   protectImageElement(logo);
   footer.appendChild(logo);
 
@@ -317,9 +500,11 @@ function getCartSelectionRowHeight(columnCount) {
   return 92;
 }
 
-function createCartSelectionPosterPreview(item) {
+function createCartSelectionPosterPreview(item, previewOptions = {}) {
   const customization = item.customization || {};
   const films = (item.films || []).filter((film) => film?.image).slice(0, 100);
+  const useFilmThumbs = previewOptions.useFilmThumbs === true;
+  const lazyImages = previewOptions.lazyImages === true;
   const poster = document.createElement("article");
   poster.className = "gallery-selection-poster poster-sheet";
   setCartBackground(poster, customization);
@@ -348,11 +533,13 @@ function createCartSelectionPosterPreview(item) {
   if (films.length) {
     films.forEach((film) => {
       grid.appendChild(
-        createCartQuizFilmCard({
-          ...film,
-          circleSrc: customization.filmCircleSrc || CART_CIRCLE_SRC,
-          previewImage: layout.layoutCount === 100 ? getCartThumbnailSrc(film.image) : film.image,
-        })
+        createCartQuizFilmCard(
+          {
+            ...film,
+            circleSrc: customization.filmCircleSrc || CART_CIRCLE_SRC,
+          },
+          { useFilmThumbs, lazyImages }
+        )
       );
     });
   } else {
@@ -370,6 +557,7 @@ function createCartSelectionPosterPreview(item) {
   logo.src = CART_LOGO_SRC;
   logo.alt = "My Movies Poster";
   logo.decoding = "async";
+  if (lazyImages) logo.loading = "lazy";
   protectImageElement(logo);
 
   header.appendChild(title);
@@ -384,14 +572,18 @@ function createCartSelectionPosterPreview(item) {
 }
 
 function createCartPosterPreview(item, mode = "modal") {
+  const isThumbnail = mode === "thumbnail";
+  const previewOptions = isThumbnail
+    ? { useFilmThumbs: true, lazyImages: true }
+    : getCartModalPreviewOptions();
   const frame = document.createElement("div");
-  frame.className = "cart-live-poster-frame";
-  frame.dataset.cartPreviewMode = mode;
+  frame.className = isThumbnail ? "cart-thumb-poster-frame" : "cart-live-poster-frame";
   frame.dataset.cartPosterType = item.type || "quiz-poster";
+  if (!isThumbnail) frame.dataset.cartPreviewMode = mode;
   frame.appendChild(
     item.type === "selection-poster"
-      ? createCartSelectionPosterPreview(item)
-      : createCartQuizPosterPreview(item)
+      ? createCartSelectionPosterPreview(item, previewOptions)
+      : createCartQuizPosterPreview(item, previewOptions)
   );
   return frame;
 }
@@ -461,93 +653,311 @@ function syncCartQuizPosterMetrics(poster) {
   syncCartQuizPosterBandHeight(poster);
 }
 
+/** Modal vitrine : fit titres seulement (inchangé). */
+function syncCartGalleryPosterMetrics(poster) {
+  poster.querySelectorAll(".film-title").forEach((titleEl) => {
+    delete titleEl.dataset.fitKey;
+    fitCartPosterFilmTitle(titleEl);
+  });
+}
+
+/** Vignette panier : titres + cellules comme Mon Poster, après gabarit 340px. */
+function syncCartThumbPosterMetrics(poster) {
+  poster.querySelectorAll(".film-title").forEach((titleEl) => {
+    delete titleEl.dataset.fitKey;
+  });
+  syncCartQuizPosterMetrics(poster);
+}
+
+function prepareCartGalleryPosterForMeasure(poster) {
+  poster.style.width = `${CART_GALLERY_PREVIEW_W}px`;
+  poster.style.maxWidth = `${CART_GALLERY_PREVIEW_W}px`;
+  poster.style.minWidth = "0";
+  poster.style.height = "auto";
+  poster.style.minHeight = "0";
+  poster.style.maxHeight = "none";
+}
+
+/** Mon Poster vignette : même gabarit px que la vitrine (évite la lamelle étroite). */
+function prepareCartQuizPosterForMeasure(poster) {
+  poster.style.width = `${CART_GALLERY_PREVIEW_W}px`;
+  poster.style.maxWidth = `${CART_GALLERY_PREVIEW_W}px`;
+  poster.style.minWidth = "0";
+  poster.style.height = "auto";
+  poster.style.minHeight = "0";
+  poster.style.maxHeight = "none";
+}
+
+function sizeCartThumbFixedPreviewFrame(frame, poster, host, prepareMeasure, syncMetrics) {
+  poster.style.removeProperty("transform");
+  frame.style.removeProperty("width");
+  frame.style.removeProperty("height");
+  frame.style.removeProperty("max-width");
+  frame.style.removeProperty("max-height");
+
+  prepareMeasure(poster);
+  void poster.offsetWidth;
+  if (typeof syncMetrics === "function") syncMetrics(poster);
+
+  const baseWidth = CART_GALLERY_PREVIEW_W;
+  const baseHeight = CART_GALLERY_PREVIEW_H;
+  const hostRect = host.getBoundingClientRect();
+  const fallback = 200;
+  const availableWidth = Math.max(
+    1,
+    Math.floor(hostRect.width) || host.clientWidth || fallback
+  );
+  const availableHeight = Math.max(
+    1,
+    Math.floor(hostRect.height) || host.clientHeight || host.clientWidth || fallback
+  );
+  const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
+  if (!Number.isFinite(scale) || scale <= 0) return;
+
+  frame.style.width = `${Math.max(1, Math.ceil(baseWidth * scale))}px`;
+  frame.style.height = `${Math.max(1, Math.ceil(baseHeight * scale))}px`;
+  frame.style.maxWidth = "100%";
+  frame.style.maxHeight = "100%";
+  poster.style.transformOrigin = "center center";
+  poster.style.transform = `scale(${scale})`;
+}
+
+function isCartGalleryStylePoster(poster) {
+  return poster?.classList.contains("gallery-selection-poster");
+}
+
+/** Modal vitrine — gabarit 340px + scale (inchangé). */
 function sizeCartLivePosterFrame(frame) {
   const poster = frame.firstElementChild;
   const host = frame.parentElement;
   if (!poster || !host) return;
 
-  const mode = frame.dataset.cartPreviewMode;
-  const isThumbnail = mode === "thumbnail";
   const isSelection = frame.dataset.cartPosterType === "selection-poster";
-  const selectionFallbackW = 340;
-  const selectionFallbackH = Math.round((selectionFallbackW * 594) / 420);
+  if (!isSelection) return;
 
-  const rect = poster.getBoundingClientRect();
-  let baseWidth = Math.round(rect.width) || poster.offsetWidth;
-  let baseHeight = Math.round(rect.height) || poster.offsetHeight;
+  const sizingHost = host.closest?.(".cart-preview-content") || host;
+  const hostRect = sizingHost.getBoundingClientRect();
+  const previewPad = 40;
 
-  if (isSelection) {
-    if (baseWidth > 24 && (!baseHeight || baseHeight < 24)) {
-      baseHeight = Math.round((baseWidth * 594) / 420);
-    } else if (baseHeight > 24 && (!baseWidth || baseWidth < 24)) {
-      baseWidth = Math.round((baseHeight * 420) / 594);
-    }
-    if (!baseWidth || !baseHeight || baseWidth < 24 || baseHeight < 24) {
-      baseWidth = selectionFallbackW;
-      baseHeight = selectionFallbackH;
-    }
-  } else if (!baseWidth || !baseHeight) {
-    baseWidth = baseWidth || 1587;
-    baseHeight = baseHeight || 2245;
-  }
+  prepareCartGalleryPosterForMeasure(poster);
+  void poster.offsetWidth;
+  syncCartGalleryPosterMetrics(poster);
 
-  const sizingHost =
-    !isThumbnail && host.closest?.(".cart-preview-content") ? host.closest(".cart-preview-content") : host;
-
-  const thumbFallback = 200;
-  const availableWidth = Math.max(1, sizingHost.clientWidth || (isThumbnail ? thumbFallback : 520));
+  const baseWidth = CART_GALLERY_PREVIEW_W;
+  const baseHeight = CART_GALLERY_PREVIEW_H;
+  const availableWidth = Math.max(
+    1,
+    (Math.floor(hostRect.width) || sizingHost.clientWidth || 520) - previewPad * 2
+  );
   const availableHeight = Math.max(
     1,
-    isThumbnail
-      ? sizingHost.clientHeight || sizingHost.clientWidth || availableWidth
-      : Math.min(
-          window.innerHeight * 0.78 - 100,
-          Math.max(sizingHost.clientHeight, window.innerHeight * 0.5),
-          820
-        )
+    (Math.floor(hostRect.height) || sizingHost.clientHeight || availableWidth) -
+      previewPad * 2
   );
   const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight, 1);
   if (!Number.isFinite(scale) || scale <= 0) return;
 
-  const nextW = Math.max(1, Math.ceil(baseWidth * scale));
-  const nextH = Math.max(1, Math.ceil(baseHeight * scale));
-
-  frame.style.width = `${nextW}px`;
-  frame.style.height = `${nextH}px`;
+  frame.style.width = "100%";
+  frame.style.height = "100%";
+  frame.style.maxWidth = "100%";
+  frame.style.maxHeight = "100%";
+  poster.style.transformOrigin = "center center";
   poster.style.transform = `scale(${scale})`;
 }
 
-function syncCartLivePosterFrame(frame) {
-  const poster = frame.firstElementChild;
-  const mode = frame.dataset.cartPreviewMode;
-  if (
-    mode === "modal" &&
-    poster?.classList.contains("poster-sheet") &&
-    !poster.classList.contains("gallery-selection-poster")
-  ) {
-    syncCartQuizPosterMetrics(poster);
+function teardownCartModalPreview(content) {
+  _cartModalPreviewGen += 1;
+  clearTimeout(_cartModalPreviewImgTimer);
+  clearTimeout(_cartModalPreviewUpgradeTimer);
+  _cartModalPreviewImgTimer = 0;
+  _cartModalPreviewUpgradeTimer = 0;
+  if (!content) return;
+
+  if (content._mppCartModalImgHandler) {
+    content.removeEventListener("load", content._mppCartModalImgHandler, true);
+    content._mppCartModalImgHandler = null;
   }
-  sizeCartLivePosterFrame(frame);
-}
 
-function scheduleCartLivePosterFrame(frame) {
-  const run = () => requestAnimationFrame(() => syncCartLivePosterFrame(frame));
-  if (document.fonts?.ready) document.fonts.ready.then(run);
-  else run();
+  const host = content.querySelector(".cart-poster-preview-host");
+  if (host?._mppCartQuizPreviewRO) {
+    host._mppCartQuizPreviewRO.disconnect();
+    host._mppCartQuizPreviewRO = null;
+  }
 
-  let imgReflowTimer = 0;
-  const onImgProgress = () => {
-    clearTimeout(imgReflowTimer);
-    imgReflowTimer = window.setTimeout(run, 60);
-  };
-  frame.querySelectorAll("img").forEach((img) => {
-    if (!img.complete) img.addEventListener("load", onImgProgress, { passive: true });
-  });
-
-  if (frame._mppCartPosterRO) {
+  const frame = content.querySelector(".cart-live-poster-frame");
+  if (frame?._mppCartPosterRO) {
     frame._mppCartPosterRO.disconnect();
     frame._mppCartPosterRO = null;
   }
+}
+
+function upgradeCartModalFilmImage(img) {
+  const fullSrc = img.dataset.cartFullSrc || "";
+  if (!fullSrc || img.dataset.cartFullUpgraded === "1" || img.src === fullSrc) {
+    return Promise.resolve(false);
+  }
+
+  return new Promise((resolve) => {
+    const loader = new Image();
+    loader.decoding = "async";
+    const finish = (ok) => {
+      if (ok && img.isConnected) {
+        img.src = fullSrc;
+        img.dataset.cartFullUpgraded = "1";
+        delete img.dataset.cartFullSrc;
+        delete img.dataset.fallbackSrc;
+      }
+      resolve(ok);
+    };
+    loader.onload = () => finish(true);
+    loader.onerror = () => finish(false);
+    loader.src = fullSrc;
+  });
+}
+
+function startCartModalFullResUpgrade(content, onSync) {
+  const gen = _cartModalPreviewGen;
+  const filmImgs = [...content.querySelectorAll(".poster-film > img[data-cart-full-src]")];
+  if (!filmImgs.length) return;
+
+  const runSync = () => {
+    if (gen !== _cartModalPreviewGen || !content.isConnected) return;
+    onSync();
+  };
+
+  const startUpgrade = () => {
+    if (gen !== _cartModalPreviewGen) return;
+    let index = 0;
+
+    const step = () => {
+      if (gen !== _cartModalPreviewGen || !content.isConnected) return;
+      const batch = filmImgs.slice(index, index + CART_MODAL_UPGRADE_BATCH);
+      index += CART_MODAL_UPGRADE_BATCH;
+      if (!batch.length) return;
+
+      Promise.all(batch.map(upgradeCartModalFilmImage)).then(() => {
+        runSync();
+        if (index < filmImgs.length) {
+          _cartModalPreviewUpgradeTimer = window.setTimeout(step, 0);
+          return;
+        }
+        const poster = content.querySelector(".poster-sheet");
+        if (poster && !content.querySelector(".poster-film > img[data-cart-full-src]")) {
+          poster.dataset.cartModalImageTier = "full";
+        }
+      });
+    };
+
+    step();
+  };
+
+  const idle = window.requestIdleCallback;
+  if (typeof idle === "function") idle(startUpgrade, { timeout: 1200 });
+  else window.setTimeout(startUpgrade, 80);
+}
+
+function scheduleCartModalPreview(content, syncFn) {
+  const run = () =>
+    requestAnimationFrame(() => {
+      if (!content.isConnected) return;
+      syncFn();
+    });
+
+  if (document.fonts?.ready) document.fonts.ready.then(run);
+  else run();
+
+  if (!content._mppCartModalImgHandler) {
+    const onImgProgress = () => {
+      clearTimeout(_cartModalPreviewImgTimer);
+      _cartModalPreviewImgTimer = window.setTimeout(run, 120);
+    };
+    content.addEventListener("load", onImgProgress, true);
+    content._mppCartModalImgHandler = onImgProgress;
+  }
+
+  const sizingEl = content.closest(".cart-preview-content") || content;
+  const host = content.querySelector(".cart-poster-preview-host");
+  const frame = content.querySelector(".cart-live-poster-frame");
+
+  if (host) {
+    const poster = host.querySelector(".poster-sheet");
+    if (host._mppCartQuizPreviewRO) host._mppCartQuizPreviewRO.disconnect();
+    if (sizingEl && typeof ResizeObserver !== "undefined" && poster) {
+      host._mppCartQuizPreviewRO = new ResizeObserver(run);
+      host._mppCartQuizPreviewRO.observe(sizingEl);
+    }
+    startCartModalFullResUpgrade(content, () => syncCartQuizModalPreview(host, poster));
+    return;
+  }
+
+  if (frame) {
+    if (frame._mppCartPosterRO) frame._mppCartPosterRO.disconnect();
+    if (sizingEl && typeof ResizeObserver !== "undefined") {
+      frame._mppCartPosterRO = new ResizeObserver(run);
+      frame._mppCartPosterRO.observe(sizingEl);
+    }
+    startCartModalFullResUpgrade(content, () => syncCartLivePosterFrame(frame));
+  }
+}
+
+/** Modal Mon Poster — même moteur que « Visualiser le poster » sur mon-poster.html. */
+function syncCartQuizModalPreview(host, poster) {
+  const api = window.MppPosterPreviewHost;
+  if (!api || !host || !poster) return;
+
+  host.style.removeProperty("width");
+  host.style.removeProperty("height");
+  api.preparePosterSheetForA2Measure(poster);
+  void poster.offsetWidth;
+  api.syncPosterSheetLayoutMetrics(poster);
+  void poster.offsetWidth;
+  api.sizePosterSheetInHost(poster, host, {
+    sizingEl: host.closest(".cart-preview-content"),
+    fallbackWidth: api.POSTER_A2_FALLBACK_W,
+    fallbackHeight: api.POSTER_A2_FALLBACK_H,
+    maxFitScale: 0.72,
+    horizontalPad: 48,
+    verticalPad: 56,
+    transformOrigin: "top left",
+  });
+}
+
+function syncCartLivePosterFrame(frame) {
+  sizeCartLivePosterFrame(frame);
+}
+
+/** Vignette panier — vitrine inchangée ; Mon Poster = même gabarit 340px + scale. */
+function sizeCartThumbnailPosterFrame(frame) {
+  const poster = frame.firstElementChild;
+  const host = frame.parentElement;
+  if (!poster || !host) return;
+
+  const posterType = frame.dataset.cartPosterType || "quiz-poster";
+
+  if (posterType === "selection-poster" && isCartGalleryStylePoster(poster)) {
+    sizeCartThumbFixedPreviewFrame(
+      frame,
+      poster,
+      host,
+      prepareCartGalleryPosterForMeasure,
+      syncCartThumbPosterMetrics
+    );
+    return;
+  }
+
+  if (posterType === "quiz-poster" && poster.classList.contains("poster-sheet")) {
+    sizeCartThumbFixedPreviewFrame(
+      frame,
+      poster,
+      host,
+      prepareCartQuizPosterForMeasure,
+      syncCartThumbPosterMetrics
+    );
+  }
+}
+
+function syncCartThumbnailPosterFrame(frame) {
+  sizeCartThumbnailPosterFrame(frame);
 }
 
 function openCartPreview(item) {
@@ -555,15 +965,37 @@ function openCartPreview(item) {
   const content = document.getElementById("cartPreviewContent");
   if (!modal || !content) return;
 
+  teardownCartModalPreview(content);
   content.innerHTML = "";
   modal.hidden = false;
   const previewFrame = document.createElement("div");
   previewFrame.className = "cart-preview-watermark-frame";
-  const livePreview = createCartPosterPreview(item, "modal");
-  previewFrame.appendChild(livePreview);
-  content.appendChild(previewFrame);
-  scheduleCartLivePosterFrame(livePreview);
-  requestAnimationFrame(() => syncCartLivePosterFrame(livePreview));
+  const modalPreviewOptions = getCartModalPreviewOptions();
+
+  if (item.type === "quiz-poster") {
+    const host = document.createElement("div");
+    host.className = "cart-poster-preview-host";
+    const poster = createCartQuizPosterPreview(item, modalPreviewOptions);
+    poster.classList.add("poster-large-preview-clone");
+    poster.dataset.cartModalImageTier = "thumb";
+    host.appendChild(poster);
+    previewFrame.appendChild(host);
+    content.appendChild(previewFrame);
+    const syncQuiz = () => syncCartQuizModalPreview(host, poster);
+    scheduleCartModalPreview(content, syncQuiz);
+    requestAnimationFrame(syncQuiz);
+  } else {
+    const livePreview = createCartPosterPreview(item, "modal");
+    const poster = livePreview.firstElementChild;
+    if (poster) poster.dataset.cartModalImageTier = "thumb";
+    previewFrame.appendChild(livePreview);
+    content.appendChild(previewFrame);
+    const syncLive = () => syncCartLivePosterFrame(livePreview);
+    scheduleCartModalPreview(content, syncLive);
+    requestAnimationFrame(syncLive);
+  }
+
+  protectCartImagesIn(content);
   window.removeEventListener("resize", onCartPreviewWindowResize);
   window.addEventListener("resize", onCartPreviewWindowResize);
   document.getElementById("cartPreviewClose")?.focus();
@@ -575,6 +1007,8 @@ function closeCartPreview() {
   _mppCartPreviewResizeTimer = 0;
 
   const modal = document.getElementById("cartPreviewModal");
+  const content = document.getElementById("cartPreviewContent");
+  teardownCartModalPreview(content);
   if (modal) modal.hidden = true;
 }
 
@@ -585,9 +1019,7 @@ function createCartItem(item, index) {
   const preview = document.createElement("div");
   preview.className = "cart-item-preview";
   preview.classList.add("cart-item-preview--live");
-  const livePreview = createCartPosterPreview(item, "thumbnail");
-  preview.appendChild(livePreview);
-  scheduleCartLivePosterFrame(livePreview);
+  preview.appendChild(createCartPosterPreview(item, "thumbnail"));
 
   const details = document.createElement("div");
   details.className = "cart-item-details";
@@ -648,6 +1080,7 @@ function renderCart() {
   if (!root) return;
 
   const items = readCartItems();
+  teardownCartThumbObservers();
   root.innerHTML = "";
 
   if (summary) {
@@ -674,6 +1107,8 @@ function renderCart() {
     fragment.appendChild(createCartItem(item, index));
   });
   root.appendChild(fragment);
+  protectCartImagesIn(root);
+  scheduleCartThumbPipelineStart(root);
 }
 
 document.getElementById("cartClearAll")?.addEventListener("click", () => {

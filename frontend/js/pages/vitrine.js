@@ -10,20 +10,79 @@ const galleryState = {
 
 const GALLERY_SELECTION_MAX_COUNT = 100;
 const GALLERY_CIRCLE_SRC = "./assets/site/circle.png";
+const GALLERY_PREVIEW_DESIGN_W = 340;
+const GALLERY_PREVIEW_DESIGN_H = Math.round((GALLERY_PREVIEW_DESIGN_W * 594) / 420);
 
 var galleryTextCustomizer = null;
 var galleryCustomizePreviewFrame = 0;
+var _galleryCustomizeResizeTimer = 0;
+
+function prepareGalleryCustomizeCloneLayout(clone) {
+  clone.style.width = `${GALLERY_PREVIEW_DESIGN_W}px`;
+  clone.style.maxWidth = `${GALLERY_PREVIEW_DESIGN_W}px`;
+  clone.style.minWidth = "0";
+  clone.style.height = "auto";
+  clone.style.minHeight = "0";
+  clone.style.maxHeight = "none";
+}
+
+function sizeGalleryCustomizePreviewClone(clone) {
+  const preview = document.getElementById("galleryCustomizePreview");
+  if (!preview || !clone) return;
+
+  const frame = preview.closest(".customize-live-preview");
+  clone.style.removeProperty("transform");
+  prepareGalleryCustomizeCloneLayout(clone);
+  preview.style.width = `${GALLERY_PREVIEW_DESIGN_W}px`;
+  preview.style.height = "auto";
+  preview.style.maxWidth = "100%";
+  void clone.offsetWidth;
+
+  const baseWidth = clone.offsetWidth || GALLERY_PREVIEW_DESIGN_W;
+  const baseHeight = clone.offsetHeight || GALLERY_PREVIEW_DESIGN_H;
+
+  const rect = frame?.getBoundingClientRect();
+  const frameW = rect && rect.width > 8 ? rect.width : frame?.clientWidth || 400;
+  const frameH = rect && rect.height > 8 ? rect.height : frame?.clientHeight || 520;
+  const pad = 36;
+  const availableWidth = Math.max(200, frameW - pad);
+  const availableHeight = Math.max(220, frameH - pad);
+  const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
+  if (!Number.isFinite(scale) || scale <= 0) return;
+
+  preview.style.width = `${Math.ceil(baseWidth * scale)}px`;
+  preview.style.height = `${Math.ceil(baseHeight * scale)}px`;
+  preview.style.overflow = "hidden";
+  clone.style.transformOrigin = "top left";
+  clone.style.transform = `scale(${scale})`;
+}
+
+function onGalleryCustomizeWindowResize() {
+  clearTimeout(_galleryCustomizeResizeTimer);
+  _galleryCustomizeResizeTimer = window.setTimeout(() => {
+    const modal = document.getElementById("galleryCustomizeModal");
+    const preview = document.getElementById("galleryCustomizePreview");
+    const clone = preview?.querySelector(".gallery-customize-poster-clone");
+    if (!modal || modal.hidden || !clone) return;
+    sizeGalleryCustomizePreviewClone(clone);
+  }, 150);
+}
 
 function refreshGalleryCustomizePreview() {
   const modal = document.getElementById("galleryCustomizeModal");
   const preview = document.getElementById("galleryCustomizePreview");
-  const source = document.querySelector(".gallery-selection-poster");
+  const source = document.querySelector(".gallery-selection-poster.poster-sheet");
   if (!modal || modal.hidden || !preview || !source) return;
 
   const clone = source.cloneNode(true);
   clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+  clone.classList.add("gallery-customize-poster-clone");
   preview.innerHTML = "";
   preview.appendChild(clone);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => sizeGalleryCustomizePreviewClone(clone));
+  });
 }
 
 function scheduleGalleryCustomizePreview() {
@@ -457,14 +516,25 @@ function openGalleryCustomizer() {
   galleryTextCustomizer?.writeControls();
   modal.hidden = false;
   scheduleGalleryCustomizePreview();
+  window.removeEventListener("resize", onGalleryCustomizeWindowResize);
+  window.addEventListener("resize", onGalleryCustomizeWindowResize);
   document.getElementById("galleryTitleInput")?.focus();
 }
 
 function closeGalleryCustomizer() {
+  window.removeEventListener("resize", onGalleryCustomizeWindowResize);
+  clearTimeout(_galleryCustomizeResizeTimer);
+  _galleryCustomizeResizeTimer = 0;
   const modal = document.getElementById("galleryCustomizeModal");
   if (modal) modal.hidden = true;
   const preview = document.getElementById("galleryCustomizePreview");
-  if (preview) preview.innerHTML = "";
+  if (preview) {
+    preview.innerHTML = "";
+    preview.style.removeProperty("width");
+    preview.style.removeProperty("height");
+    preview.style.removeProperty("max-width");
+    preview.style.removeProperty("max-height");
+  }
 }
 
 function isGalleryCustomizerEventInsideCard(event, card) {
