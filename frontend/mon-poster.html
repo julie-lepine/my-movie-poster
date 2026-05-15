@@ -39,6 +39,14 @@
 </header>
 
 <main class="page-content">
+  <div class="gallery-controls">
+    <div class="gallery-page-intro">
+      <p>
+        Sur cette page, tu réponds à une série de questions pour que nous comprenions tes goûts, ton style et l’univers visuel qui te correspond. À la fin du parcours, nous générons une <strong>affiche sur mesure</strong> que tu pourras ensuite <strong>personnaliser</strong>&nbsp;: titres, couleurs, nombre d’images et détails de mise en page.
+      </p>
+    </div>
+  </div>
+
   <div id="quiz">
     <div class="quiz-card" id="quizCard">
       <div id="questionStep" class="question-step"></div>
@@ -62,7 +70,7 @@
   </div>
 
   <div id="posterWorkspace">
-    <div id="posterPreviewViewport" class="poster-preview-viewport" data-poster-layout="100">
+    <div id="posterPreviewViewport" class="poster-preview-viewport poster-preview-watermark" data-poster-layout="100">
       <div class="poster-preview-clip">
         <div id="posterPreviewScaleSlot" class="poster-preview-scale-slot">
           <div class="poster-preview-stage">
@@ -232,7 +240,7 @@
           <button id="posterPreviewZoomIn" type="button" aria-label="Zoomer">+</button>
           <button id="posterPreviewZoomReset" type="button">Réinitialiser</button>
         </div>
-        <div id="posterCustomizePreview" class="customize-live-preview-inner poster-customize-preview"></div>
+        <div id="posterCustomizePreview" class="customize-live-preview-inner poster-customize-preview poster-preview-watermark"></div>
       </aside>
     </div>
   </div>

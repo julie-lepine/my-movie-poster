@@ -80,6 +80,7 @@ function refreshGalleryCustomizePreview() {
 
   const clone = source.cloneNode(true);
   clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+  clone.classList.remove("poster-preview-watermark");
   clone.classList.add("gallery-customize-poster-clone");
   preview.innerHTML = "";
   preview.appendChild(clone);
