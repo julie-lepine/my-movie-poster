@@ -1,5 +1,33 @@
 // Flux quiz -> recommandations -> poster. Chargé uniquement sur la page Mon Poster.
 
+function quizPrefersReducedMotion() {
+  try {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+}
+
+/** Remonte la vue sur le bloc quiz (mobile : après une réponse en bas de grille). */
+function scrollQuizIntoViewStart() {
+  const el = typeof quiz !== "undefined" ? quiz : document.getElementById("quiz");
+  if (!el) return;
+  el.scrollIntoView({
+    behavior: quizPrefersReducedMotion() ? "auto" : "smooth",
+    block: "start",
+    inline: "nearest",
+  });
+}
+
+function focusQuizQuestionTitle() {
+  if (!questionTitle) return;
+  try {
+    questionTitle.focus({ preventScroll: true });
+  } catch {
+    questionTitle.focus();
+  }
+}
+
 function initPosterPage() {
   runMappingSanityCheck();
   renderCurrentQuestion(false);
@@ -68,6 +96,8 @@ function renderCurrentQuestion(withFade = true) {
   setTimeout(() => {
     render();
     quizCard.classList.remove("is-fading");
+    scrollQuizIntoViewStart();
+    requestAnimationFrame(focusQuizQuestionTitle);
   }, 140);
 }
 

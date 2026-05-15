@@ -87,17 +87,27 @@ function sizePosterCustomizePreviewClone(clone) {
     void clone.offsetWidth;
   }
 
-  const availableWidth = Math.max(240, (frame?.clientWidth || 560) - 36);
-  const availableHeight = Math.max(
-    320,
-    (frame?.clientHeight || window.innerHeight * 0.78) - 48 - (zoomControls?.offsetHeight || 0)
+  const rawAvailW = Math.max(160, (frame?.clientWidth || 560) - 36);
+  const zoomH = zoomControls?.offsetHeight || 0;
+  const compactModal =
+    typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;
+
+  const frameAvailH = Math.max(
+    compactModal ? 160 : 280,
+    (frame?.clientHeight || window.innerHeight * (compactModal ? 0.42 : 0.78)) - 48 - zoomH
   );
+  const heightCap = compactModal ? Math.min(window.innerHeight * 0.38, 340) : window.innerHeight * 0.85;
+  const availableWidth = rawAvailW;
+  const availableHeight = Math.min(frameAvailH, heightCap);
 
   const fitScale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight, 0.42);
   const scale = fitScale * posterCustomizePreviewZoom;
 
-  preview.style.width = `${Math.floor(availableWidth)}px`;
-  preview.style.height = `${Math.floor(availableHeight)}px`;
+  let vw = Math.floor(availableWidth);
+  let vh = Math.floor(availableHeight);
+
+  preview.style.width = `${vw}px`;
+  preview.style.height = `${vh}px`;
   preview.style.maxWidth = "100%";
   preview.style.overflow = "hidden";
   preview.style.boxSizing = "border-box";
@@ -110,10 +120,17 @@ function sizePosterCustomizePreviewClone(clone) {
 
   void preview.offsetWidth;
 
-  const vw = preview.clientWidth;
-  const vh = preview.clientHeight;
   const pw = panWrap.offsetWidth;
   const ph = panWrap.offsetHeight;
+
+  if (compactModal) {
+    const pad = 10;
+    vw = Math.min(vw, pw + pad);
+    vh = Math.min(vh, ph + pad);
+    preview.style.width = `${vw}px`;
+    preview.style.height = `${vh}px`;
+  }
+
   preview.classList.toggle("is-pannable-poster-preview", pw > vw + 1 || ph > vh + 1);
 
   applyPosterCustomizePreviewPanTransform();
@@ -496,15 +513,24 @@ function fitPosterFilmTitles() {
 function syncPosterPreviewSlotSize() {
   const stage = document.querySelector(".poster-preview-stage");
   const slot = posterPreviewScaleSlot;
-  if (!stage || !slot || posterWorkspace.style.display === "none") return;
+  const viewport = posterPreviewViewport;
+  const clip = viewport?.querySelector(".poster-preview-clip");
+  const posterEl = document.getElementById("posterContainer");
+  if (!stage || !slot || !viewport || !clip || !posterEl || posterWorkspace.style.display === "none") return;
 
-  const rect = stage.getBoundingClientRect();
-  const w = rect.width;
-  const h = rect.height;
-  if (w < 1 || h < 1) return;
+  const clipW = clip.clientWidth;
+  if (clipW < 1) return;
 
-  slot.style.width = `${Math.round(w * 100) / 100}px`;
-  slot.style.height = `${Math.round(h * 100) / 100}px`;
+  const a2w = posterEl.offsetWidth;
+  const a2h = posterEl.offsetHeight;
+  if (a2w < 1 || a2h < 1) return;
+
+  const scale = clipW / a2w;
+  viewport.style.setProperty("--poster-preview-scale", String(scale));
+
+  const scaledH = a2h * scale;
+  slot.style.width = `${Math.round(clipW * 100) / 100}px`;
+  slot.style.height = `${Math.round(scaledH * 100) / 100}px`;
 }
 
 function setupPosterPreviewLayoutSync() {
@@ -515,6 +541,9 @@ function setupPosterPreviewLayoutSync() {
     schedulePosterLayoutMetrics();
   });
   ro.observe(posterEl);
+  if (posterPreviewViewport) ro.observe(posterPreviewViewport);
+  const clip = posterPreviewViewport?.querySelector(".poster-preview-clip");
+  if (clip) ro.observe(clip);
 
   window.addEventListener("resize", () => {
     schedulePosterLayoutMetrics();
@@ -548,18 +577,28 @@ function sizePosterLargePreviewClone(clone) {
     void clone.offsetWidth;
   }
 
-  const availWidth = Math.max(280, (card?.clientWidth || window.innerWidth * 0.92) - 56);
+  const compactLarge =
+    typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;
+
+  const availWidth = Math.max(compactLarge ? 240 : 280, (card?.clientWidth || window.innerWidth * 0.92) - 56);
+  const zoomH = zoomControls?.offsetHeight || 0;
+  const cardInnerH =
+    (card?.clientHeight || window.innerHeight * (compactLarge ? 0.82 : 0.9)) - 70 - zoomH;
+  const heightCeiling = window.innerHeight * (compactLarge ? 0.42 : 0.62);
   const availHeight = Math.max(
-    360,
-    (card?.clientHeight || window.innerHeight * 0.9) - 70 - (zoomControls?.offsetHeight || 0)
+    compactLarge ? 200 : 320,
+    Math.min(Math.max(260, cardInnerH), heightCeiling)
   );
 
-  const fitCap = 0.72;
+  const fitCap = compactLarge ? 0.58 : 0.72;
   const fitScale = Math.min(availWidth / baseWidth, availHeight / baseHeight, fitCap);
   const scale = fitScale * posterLargePreviewZoom;
 
-  content.style.width = `${Math.floor(availWidth)}px`;
-  content.style.height = `${Math.floor(availHeight)}px`;
+  let vw = Math.floor(availWidth);
+  let vh = Math.floor(availHeight);
+
+  content.style.width = `${vw}px`;
+  content.style.height = `${vh}px`;
   content.style.maxWidth = "100%";
   content.style.overflow = "hidden";
   content.style.boxSizing = "border-box";
@@ -573,10 +612,20 @@ function sizePosterLargePreviewClone(clone) {
 
   void content.offsetWidth;
 
-  const vw = content.clientWidth;
-  const vh = content.clientHeight;
-  const pw = panWrap.offsetWidth;
-  const ph = panWrap.offsetHeight;
+  let pw = panWrap.offsetWidth;
+  let ph = panWrap.offsetHeight;
+
+  if (compactLarge) {
+    const pad = 12;
+    vw = Math.min(vw, pw + pad);
+    vh = Math.min(vh, ph + pad);
+    content.style.width = `${vw}px`;
+    content.style.height = `${vh}px`;
+    void content.offsetWidth;
+    pw = panWrap.offsetWidth;
+    ph = panWrap.offsetHeight;
+  }
+
   content.classList.toggle("is-pannable-poster-preview", pw > vw + 1 || ph > vh + 1);
 
   applyPosterLargePreviewPanTransform();
