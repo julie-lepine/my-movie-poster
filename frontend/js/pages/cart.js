@@ -16,12 +16,17 @@ function writeCartItems(items) {
 function getCartItemTitle(item) {
   const title = String(item.customization?.title || "").trim();
   if (title) return title;
+  if (item.type === "square-frame-poster") {
+    const filmTitle = String(item.films?.[0]?.titre || "").trim();
+    return filmTitle || "Affiche encadrée";
+  }
   if (item.type === "selection-poster") return "Ma sélection";
   if (item.type === "quiz-poster") return "Ton univers cinéma";
   return "Poster personnalisé";
 }
 
 function getCartItemSubtitle(item) {
+  if (item.type === "square-frame-poster") return "Format carré · cadre personnalisable";
   return String(item.customization?.subtitle || "").trim() || "Création personnalisée";
 }
 
@@ -31,6 +36,8 @@ const CART_CIRCLE_SRC = "./assets/site/circle.png";
 /** Même gabarit d’aperçu que la vitrine (px). */
 const CART_GALLERY_PREVIEW_W = 340;
 const CART_GALLERY_PREVIEW_H = Math.round((CART_GALLERY_PREVIEW_W * 594) / 420);
+const CART_SQUARE_PREVIEW_W = 340;
+const CART_SQUARE_PREVIEW_H = 340;
 
 var _mppCartPreviewResizeTimer = 0;
 var _cartModalPreviewGen = 0;
@@ -500,6 +507,39 @@ function getCartSelectionRowHeight(columnCount) {
   return 92;
 }
 
+function createCartSquareFramePosterPreview(item, previewOptions = {}) {
+  const useFilmThumbs = previewOptions.useFilmThumbs === true;
+  const lazyImages = previewOptions.lazyImages === true;
+  const deferFull = previewOptions.deferFullSrc === true;
+  const film = (item.films || [])[0];
+  const article = document.createElement("article");
+  article.className = "gallery-square-poster mpp-square-frame-poster cart-square-frame-poster";
+
+  const rawPct = Number(item.frameInsetPct);
+  const pct =
+    Number.isFinite(rawPct) && rawPct > 0 && rawPct < 50 ? rawPct : 8;
+  article.style.setProperty("--gallery-square-frame-pct", `${pct}%`);
+  article.style.backgroundColor = String(item.frameColor || "#ffffff").trim() || "#ffffff";
+
+  const slot = document.createElement("div");
+  slot.className = "gallery-square-poster__image-slot";
+
+  const img = document.createElement("img");
+  const fullSrc = film?.image || "";
+  img.src = useFilmThumbs ? getCartThumbnailSrc(fullSrc) : fullSrc;
+  img.alt = film?.titre ? `Affiche ${film.titre}` : "";
+  img.decoding = "async";
+  if (lazyImages) img.loading = "lazy";
+  if (deferFull && useFilmThumbs && fullSrc && img.src !== fullSrc) {
+    img.dataset.cartFullSrc = fullSrc;
+  }
+  protectImageElement(img);
+
+  slot.appendChild(img);
+  article.appendChild(slot);
+  return article;
+}
+
 function createCartSelectionPosterPreview(item, previewOptions = {}) {
   const customization = item.customization || {};
   const films = (item.films || []).filter((film) => film?.image).slice(0, 100);
@@ -579,11 +619,16 @@ function createCartPosterPreview(item, mode = "modal") {
   const frame = document.createElement("div");
   frame.className = isThumbnail ? "cart-thumb-poster-frame" : "cart-live-poster-frame";
   frame.dataset.cartPosterType = item.type || "quiz-poster";
+  if (isThumbnail && item.type === "square-frame-poster") {
+    frame.classList.add("cart-thumb-poster-frame--square");
+  }
   if (!isThumbnail) frame.dataset.cartPreviewMode = mode;
   frame.appendChild(
-    item.type === "selection-poster"
-      ? createCartSelectionPosterPreview(item, previewOptions)
-      : createCartQuizPosterPreview(item, previewOptions)
+    item.type === "square-frame-poster"
+      ? createCartSquareFramePosterPreview(item, previewOptions)
+      : item.type === "selection-poster"
+        ? createCartSelectionPosterPreview(item, previewOptions)
+        : createCartQuizPosterPreview(item, previewOptions)
   );
   return frame;
 }
@@ -678,6 +723,15 @@ function prepareCartGalleryPosterForMeasure(poster) {
   poster.style.maxHeight = "none";
 }
 
+function prepareCartSquarePosterForMeasure(poster) {
+  poster.style.width = `${CART_SQUARE_PREVIEW_W}px`;
+  poster.style.maxWidth = `${CART_SQUARE_PREVIEW_W}px`;
+  poster.style.minWidth = "0";
+  poster.style.height = `${CART_SQUARE_PREVIEW_H}px`;
+  poster.style.minHeight = `${CART_SQUARE_PREVIEW_H}px`;
+  poster.style.maxHeight = `${CART_SQUARE_PREVIEW_H}px`;
+}
+
 /** Mon Poster vignette : même gabarit px que la vitrine (évite la lamelle étroite). */
 function prepareCartQuizPosterForMeasure(poster) {
   poster.style.width = `${CART_GALLERY_PREVIEW_W}px`;
@@ -688,7 +742,38 @@ function prepareCartQuizPosterForMeasure(poster) {
   poster.style.maxHeight = "none";
 }
 
-function sizeCartThumbFixedPreviewFrame(frame, poster, host, prepareMeasure, syncMetrics) {
+/** Vignette poster carré : le poster occupe toute la largeur du frame (cellule déjà carrée). */
+function sizeCartThumbSquarePosterFrame(frame, poster) {
+  poster.style.removeProperty("transform");
+  poster.style.removeProperty("width");
+  poster.style.removeProperty("max-width");
+  poster.style.removeProperty("min-width");
+  poster.style.removeProperty("height");
+  poster.style.removeProperty("min-height");
+  poster.style.removeProperty("max-height");
+
+  frame.style.removeProperty("transform");
+  frame.style.removeProperty("width");
+  frame.style.removeProperty("height");
+  frame.style.removeProperty("max-width");
+  frame.style.removeProperty("max-height");
+
+  frame.style.width = "100%";
+  frame.style.removeProperty("height");
+  frame.style.maxWidth = "100%";
+
+  void poster.offsetWidth;
+}
+
+function sizeCartThumbFixedPreviewFrame(
+  frame,
+  poster,
+  host,
+  prepareMeasure,
+  syncMetrics,
+  baseWidth = CART_GALLERY_PREVIEW_W,
+  baseHeight = CART_GALLERY_PREVIEW_H
+) {
   poster.style.removeProperty("transform");
   frame.style.removeProperty("width");
   frame.style.removeProperty("height");
@@ -699,8 +784,6 @@ function sizeCartThumbFixedPreviewFrame(frame, poster, host, prepareMeasure, syn
   void poster.offsetWidth;
   if (typeof syncMetrics === "function") syncMetrics(poster);
 
-  const baseWidth = CART_GALLERY_PREVIEW_W;
-  const baseHeight = CART_GALLERY_PREVIEW_H;
   const hostRect = host.getBoundingClientRect();
   const fallback = 200;
   const availableWidth = Math.max(
@@ -731,6 +814,38 @@ function sizeCartLivePosterFrame(frame) {
   const poster = frame.firstElementChild;
   const host = frame.parentElement;
   if (!poster || !host) return;
+
+  const posterType = frame.dataset.cartPosterType || "quiz-poster";
+
+  if (posterType === "square-frame-poster") {
+    const sizingHost = host.closest?.(".cart-preview-content") || host;
+    const hostRect = sizingHost.getBoundingClientRect();
+    const previewPad = 40;
+
+    prepareCartSquarePosterForMeasure(poster);
+    void poster.offsetWidth;
+
+    const baseWidth = CART_SQUARE_PREVIEW_W;
+    const baseHeight = CART_SQUARE_PREVIEW_H;
+    const availableWidth = Math.max(
+      1,
+      (Math.floor(hostRect.width) || sizingHost.clientWidth || 520) - previewPad * 2
+    );
+    const availableHeight = Math.max(
+      1,
+      (Math.floor(hostRect.height) || sizingHost.clientHeight || availableWidth) - previewPad * 2
+    );
+    const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight, 1);
+    if (!Number.isFinite(scale) || scale <= 0) return;
+
+    frame.style.width = "100%";
+    frame.style.height = "100%";
+    frame.style.maxWidth = "100%";
+    frame.style.maxHeight = "100%";
+    poster.style.transformOrigin = "center center";
+    poster.style.transform = `scale(${scale})`;
+    return;
+  }
 
   const isSelection = frame.dataset.cartPosterType === "selection-poster";
   if (!isSelection) return;
@@ -934,6 +1049,14 @@ function sizeCartThumbnailPosterFrame(frame) {
 
   const posterType = frame.dataset.cartPosterType || "quiz-poster";
 
+  if (
+    posterType === "square-frame-poster" &&
+    poster.classList.contains("mpp-square-frame-poster")
+  ) {
+    sizeCartThumbSquarePosterFrame(frame, poster);
+    return;
+  }
+
   if (posterType === "selection-poster" && isCartGalleryStylePoster(poster)) {
     sizeCartThumbFixedPreviewFrame(
       frame,
@@ -1026,7 +1149,12 @@ function createCartItem(item, index) {
 
   const eyebrow = document.createElement("p");
   eyebrow.className = "cart-item-eyebrow";
-  eyebrow.textContent = item.type === "quiz-poster" ? "Mon Poster" : "Sélection vitrine";
+  eyebrow.textContent =
+    item.type === "quiz-poster"
+      ? "Mon Poster"
+      : item.type === "square-frame-poster"
+        ? "Affiche encadrée"
+        : "Sélection vitrine";
 
   const title = document.createElement("h2");
   title.textContent = getCartItemTitle(item);

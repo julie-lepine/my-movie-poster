@@ -41,6 +41,19 @@
 <main class="page-content">
   <section id="galleryPage" class="gallery-page gallery-page--standalone">
     <div class="gallery-controls">
+      <div class="gallery-page-intro">
+        <p>
+          Sur cette page, tu peux créer deux formats à partir des affiches du catalogue&nbsp;: une
+          <strong>affiche carrée</strong> (une image au centre, cadre de couleur au choix) en ne sélectionnant
+          qu’un seul film, ou une <strong>affiche murale entièrement personnalisable</strong> en cumulant
+          jusqu’à 100 films dans ta sélection.
+        </p>
+        <p>
+          Pour composer cette grande affiche, utilise les filtres ci-dessous selon tes envies&nbsp;: année
+          (par exemple celle de ta naissance), réalisateur, genre, couleur dominante de l’affiche, ou encore la
+          recherche par titre.
+        </p>
+      </div>
       <button id="galleryFilterToggle" class="gallery-filter-toggle" type="button" aria-expanded="true">
         Filtres <span aria-hidden="true"></span>
       </button>
@@ -98,19 +111,33 @@
       </div>
 
       <aside class="gallery-selection-panel" aria-label="Sélection de films">
-        <div class="gallery-selection-poster poster-sheet" data-poster-layout="25">
-          <header class="poster-header">
-            <div id="gallerySelectionTitle" class="poster-title">Ma sélection</div>
-            <div id="gallerySelectionSubtitle" class="poster-subtitle">Création personnalisée</div>
-          </header>
-          <div id="gallerySelectionGrid" class="poster-grid" data-layout="25" aria-live="polite">
-            <p class="gallery-selection-empty">Coche des films pour composer ton poster.</p>
+        <div id="galleryMultiPosterWrap" class="gallery-multi-poster-wrap">
+          <div class="gallery-selection-poster poster-sheet" data-poster-layout="25">
+            <header class="poster-header">
+              <div id="gallerySelectionTitle" class="poster-title">Ma sélection</div>
+              <div id="gallerySelectionSubtitle" class="poster-subtitle">Création personnalisée</div>
+            </header>
+            <div id="gallerySelectionGrid" class="poster-grid" data-layout="25" aria-live="polite">
+              <p class="gallery-selection-empty">Coche des films pour composer ton poster.</p>
+            </div>
+            <footer class="poster-footer" aria-label="Marque">
+              <img class="poster-footer-logo" src="./assets/site/logo.png" alt="My Movies Poster" loading="lazy" decoding="async" />
+            </footer>
           </div>
-          <footer class="poster-footer" aria-label="Marque">
-            <img class="poster-footer-logo" src="./assets/site/logo.png" alt="My Movies Poster" loading="lazy" decoding="async" />
-          </footer>
         </div>
+
+        <div id="gallerySquareWatermarkWrap" class="gallery-square-watermark-wrap" hidden>
+          <article id="gallerySquarePoster" class="gallery-square-poster mpp-square-frame-poster" aria-label="Aperçu poster encadré carré">
+            <div class="gallery-square-poster__image-slot">
+              <img id="gallerySquarePosterImg" alt="" decoding="async" />
+            </div>
+          </article>
+        </div>
+
         <p id="gallerySelectionCount" class="gallery-selection-count">0/100 film sélectionné</p>
+        <button id="gallerySquareFrameOpen" class="gallery-customize-open gallery-square-frame-open" type="button" aria-controls="gallerySquareFrameModal" hidden>
+          Personnaliser le cadre
+        </button>
         <button id="galleryCustomizeOpen" class="gallery-customize-open" type="button" aria-controls="galleryCustomizeModal">
           Personnaliser
         </button>
@@ -121,6 +148,28 @@
       </aside>
     </div>
   </section>
+
+  <div id="gallerySquareFrameModal" class="gallery-customize-modal gallery-square-frame-modal" hidden role="dialog" aria-modal="true" aria-labelledby="gallerySquareFrameModalTitle">
+    <div id="gallerySquareFrameCard" class="customize-live-card gallery-square-frame-card">
+      <section class="gallery-customize-card poster-editor customize-controls">
+        <button id="gallerySquareFrameClose" class="gallery-customize-close" type="button" aria-label="Fermer">×</button>
+        <h3 id="gallerySquareFrameModalTitle">Cadre du poster</h3>
+        <p class="gallery-square-frame-hint">Choisis la couleur du cadre autour de l’affiche (défaut&nbsp;: blanc).</p>
+        <label for="gallerySquareFrameColorInput"><strong>Couleur du cadre</strong></label>
+        <input id="gallerySquareFrameColorInput" class="poster-editor-color" type="color" value="#ffffff" />
+        <button id="gallerySquareFrameValidate" class="gallery-add-to-cart" type="button">Valider</button>
+      </section>
+      <aside class="customize-live-preview gallery-square-frame-live-preview" aria-label="Aperçu">
+        <div class="gallery-square-watermark-wrap gallery-square-watermark-wrap--modal">
+          <article id="gallerySquareFrameModalPreview" class="gallery-square-poster mpp-square-frame-poster" aria-hidden="true">
+            <div class="gallery-square-poster__image-slot">
+              <img id="gallerySquareFrameModalPreviewImg" alt="" decoding="async" />
+            </div>
+          </article>
+        </div>
+      </aside>
+    </div>
+  </div>
 
   <div id="galleryLightbox" class="gallery-lightbox" hidden role="dialog" aria-modal="true" aria-label="Aperçu du poster">
     <button id="galleryLightboxClose" class="gallery-lightbox-close" type="button" aria-label="Fermer l'aperçu">×</button>

@@ -396,6 +396,30 @@ img {
   gap: 12px;
 }
 
+.gallery-page-intro {
+  width: 50%;
+  max-width: 100%;
+  justify-self: center;
+  margin: 0;
+  text-align: center;
+}
+
+.gallery-page-intro p {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #3d4152;
+}
+
+.gallery-page-intro p:last-child {
+  margin-bottom: 0;
+}
+
+.gallery-page-intro strong {
+  font-weight: 800;
+  color: #121722;
+}
+
 .gallery-filter-toggle {
   width: fit-content;
   margin: 0;
@@ -747,6 +771,86 @@ img {
   min-width: 0;
   display: grid;
   gap: 14px;
+}
+
+.gallery-multi-poster-wrap {
+  min-width: 0;
+}
+
+/* Poster vitrine 1 film : carré, cadre coloré (padding %), image en cover + watermark */
+.gallery-square-watermark-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 18px 32px rgba(17, 24, 39, 0.22);
+}
+
+.gallery-square-watermark-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: url("assets/site/watermark.png") center / 100% auto no-repeat;
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.gallery-square-watermark-wrap--modal {
+  width: min(72vw, 380px);
+  margin: 0 auto;
+}
+
+.gallery-square-poster {
+  --gallery-square-frame-pct: 8%;
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+  border-radius: 0;
+}
+
+.gallery-square-poster__image-slot {
+  position: absolute;
+  inset: var(--gallery-square-frame-pct);
+  width: auto;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.gallery-square-poster__image-slot img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.gallery-square-frame-modal .gallery-square-frame-card {
+  align-items: stretch;
+}
+
+.gallery-square-frame-live-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  min-height: 280px;
+}
+
+.gallery-square-frame-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted, #5c606b);
 }
 
 .gallery-selection-poster {
@@ -3313,6 +3417,18 @@ button:hover {
   max-height: 100%;
 }
 
+/* Poster carré : place-items:center sur .cart-item-preview--live réduit la frame à min-content → largeur 0
+   avec poster au flux vide ; il faut étirer sur la colonne (~176–200px). */
+.cart-item-preview--live > .cart-thumb-poster-frame.cart-thumb-poster-frame--square {
+  justify-self: stretch;
+  align-self: center;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  max-height: 100%;
+}
+
 .cart-thumb-poster-frame {
   position: relative;
   display: flex;
@@ -3582,6 +3698,15 @@ button:hover {
   font-size: clamp(4px, 1.8cqi, 4.5px);
 }
 
+.cart-thumb-poster-frame.cart-thumb-poster-frame--square {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  place-items: stretch;
+  justify-items: stretch;
+  align-items: stretch;
+}
+
 .cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet {
   container-type: inline-size;
   display: grid !important;
@@ -3593,6 +3718,21 @@ button:hover {
   max-height: none !important;
   aspect-ratio: 420 / 594;
   box-sizing: border-box;
+  transform-origin: center center;
+  overflow: hidden;
+}
+
+.cart-thumb-poster-frame.cart-thumb-poster-frame--square > .mpp-square-frame-poster.cart-square-frame-poster {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  aspect-ratio: auto !important;
+  align-self: stretch;
+  justify-self: stretch;
+  box-sizing: border-box !important;
   transform-origin: center center;
   overflow: hidden;
 }
@@ -3913,6 +4053,15 @@ button:hover {
   max-width: min(100%, 340px) !important;
   min-width: 0 !important;
   height: auto !important;
+  transform-origin: center center;
+}
+
+.cart-preview-content .cart-live-poster-frame > .mpp-square-frame-poster {
+  width: 340px !important;
+  max-width: min(100%, 340px) !important;
+  min-width: 0 !important;
+  height: 340px !important;
+  box-sizing: border-box !important;
   transform-origin: center center;
 }
 

@@ -6,12 +6,16 @@ const galleryState = {
   visibleCount: 20,
   selectedColor: "",
   filtersOpen: true,
+  /** Poster carré (1 film) : couleur du cadre (fond autour de l’affiche). */
+  squareFrameColor: "#ffffff",
 };
 
 const GALLERY_SELECTION_MAX_COUNT = 100;
 const GALLERY_CIRCLE_SRC = "./assets/site/circle.png";
 const GALLERY_PREVIEW_DESIGN_W = 340;
 const GALLERY_PREVIEW_DESIGN_H = Math.round((GALLERY_PREVIEW_DESIGN_W * 594) / 420);
+/** Cadre autour de l’image (ratio identique export JPEG). */
+const GALLERY_SQUARE_FRAME_INSET_PCT = 8;
 
 var galleryTextCustomizer = null;
 var galleryCustomizePreviewFrame = 0;
@@ -91,6 +95,79 @@ function scheduleGalleryCustomizePreview() {
     galleryCustomizePreviewFrame = 0;
     refreshGalleryCustomizePreview();
   });
+}
+
+function normalizeGalleryHexColor(hex) {
+  const s = String(hex || "").trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
+  return "#ffffff";
+}
+
+function applyGallerySquareFrameColor(color) {
+  const hex = normalizeGalleryHexColor(color);
+  galleryState.squareFrameColor = hex;
+  document.querySelectorAll(".gallery-square-poster").forEach((el) => {
+    el.style.backgroundColor = hex;
+  });
+  const input = document.getElementById("gallerySquareFrameColorInput");
+  if (input) input.value = hex;
+}
+
+function syncGallerySquarePosterFilm(film) {
+  const img = document.getElementById("gallerySquarePosterImg");
+  const modalImg = document.getElementById("gallerySquareFrameModalPreviewImg");
+  const src = film?.image || "";
+  const alt = film?.titre ? `Affiche ${film.titre}` : "";
+  if (img) {
+    img.src = src;
+    img.alt = alt;
+    protectImageElement(img);
+  }
+  if (modalImg) {
+    modalImg.src = src;
+    modalImg.alt = alt;
+    protectImageElement(modalImg);
+  }
+}
+
+function syncGallerySelectionPosterMode(selectedCount) {
+  const multiWrap = document.getElementById("galleryMultiPosterWrap");
+  const squareWrap = document.getElementById("gallerySquareWatermarkWrap");
+  const squareBtn = document.getElementById("gallerySquareFrameOpen");
+  const multiCustomize = document.getElementById("galleryCustomizeOpen");
+  const isSquare = selectedCount === 1;
+
+  if (multiWrap) multiWrap.hidden = isSquare;
+  if (squareWrap) squareWrap.hidden = !isSquare;
+  if (squareBtn) squareBtn.hidden = !isSquare;
+  if (multiCustomize) multiCustomize.hidden = selectedCount < 2;
+
+  if (isSquare && galleryState.selectedFilms[0]) {
+    syncGallerySquarePosterFilm(galleryState.selectedFilms[0]);
+    applyGallerySquareFrameColor(galleryState.squareFrameColor);
+  }
+}
+
+function openGallerySquareFrameModal() {
+  const modal = document.getElementById("gallerySquareFrameModal");
+  if (!modal || galleryState.selectedFilms.length !== 1) return;
+  syncGallerySquarePosterFilm(galleryState.selectedFilms[0]);
+  applyGallerySquareFrameColor(galleryState.squareFrameColor);
+  modal.hidden = false;
+  document.getElementById("gallerySquareFrameColorInput")?.focus();
+}
+
+function closeGallerySquareFrameModal() {
+  const modal = document.getElementById("gallerySquareFrameModal");
+  if (modal) modal.hidden = true;
+}
+
+function isGallerySquareFrameModalEventInsideCard(event, card) {
+  if (!card) return false;
+  if (typeof event.composedPath === "function") {
+    return event.composedPath().includes(card);
+  }
+  return event.target instanceof Node && card.contains(event.target);
 }
 
 function normalizeGalleryText(value) {
@@ -479,6 +556,12 @@ function renderGallerySelection() {
   });
   syncGallerySelectionActionButtons();
   syncGallerySelectFilteredButton();
+  syncGallerySelectionPosterMode(selectedCount);
+
+  if (selectedCount === 1) {
+    grid.innerHTML = "";
+    return;
+  }
 
   grid.innerHTML = "";
   const layout = getGallerySelectionLayout(selectedCount);
@@ -549,17 +632,28 @@ async function addGallerySelectionToCart() {
   if (!galleryState.selectedFilms.length) return;
   const filmsToShow = galleryState.selectedFilms.slice(0, GALLERY_SELECTION_MAX_COUNT);
 
-  const cartItem = {
-    type: "selection-poster",
-    addedAt: new Date().toISOString(),
-    customization: galleryTextCustomizer?.getState() || galleryState.customization,
-    layoutCount: getGallerySelectionLayout(filmsToShow.length).layoutCount,
-    films: filmsToShow.map((film) => ({
-      titre: film.titre,
-      year: film.year,
-      image: film.image,
-    })),
-  };
+  const filmsPayload = filmsToShow.map((film) => ({
+    titre: film.titre,
+    year: film.year,
+    image: film.image,
+  }));
+
+  const cartItem =
+    filmsToShow.length === 1
+      ? {
+          type: "square-frame-poster",
+          addedAt: new Date().toISOString(),
+          frameInsetPct: GALLERY_SQUARE_FRAME_INSET_PCT,
+          frameColor: normalizeGalleryHexColor(galleryState.squareFrameColor),
+          films: filmsPayload,
+        }
+      : {
+          type: "selection-poster",
+          addedAt: new Date().toISOString(),
+          customization: galleryTextCustomizer?.getState() || galleryState.customization,
+          layoutCount: getGallerySelectionLayout(filmsToShow.length).layoutCount,
+          films: filmsPayload,
+        };
 
   setGalleryCartFeedback("Ajout au panier...");
 
@@ -659,6 +753,20 @@ function setupGalleryCustomizer() {
     if (isGalleryCustomizerEventInsideCard(event, galleryCustomizeCard)) return;
     closeGalleryCustomizer();
   });
+
+  document.getElementById("gallerySquareFrameOpen")?.addEventListener("click", openGallerySquareFrameModal);
+  document.getElementById("gallerySquareFrameClose")?.addEventListener("click", closeGallerySquareFrameModal);
+  document.getElementById("gallerySquareFrameValidate")?.addEventListener("click", closeGallerySquareFrameModal);
+  document.getElementById("gallerySquareFrameColorInput")?.addEventListener("input", (event) => {
+    applyGallerySquareFrameColor(event.target?.value);
+  });
+
+  const gallerySquareFrameModal = document.getElementById("gallerySquareFrameModal");
+  const gallerySquareFrameCard = document.getElementById("gallerySquareFrameCard");
+  gallerySquareFrameModal?.addEventListener("pointerdown", (event) => {
+    if (isGallerySquareFrameModalEventInsideCard(event, gallerySquareFrameCard)) return;
+    closeGallerySquareFrameModal();
+  });
 }
 
 function openGalleryLightbox(film) {
@@ -741,6 +849,7 @@ function setupGalleryPage() {
     if (event.key === "Escape") {
       closeGalleryLightbox();
       closeGalleryCustomizer();
+      closeGallerySquareFrameModal();
     }
   });
 }

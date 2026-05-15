@@ -4,6 +4,8 @@
   const DEFAULT_BACKGROUND = "assets/img/backgrounds/bg.png";
   const LOGO_SRC = "./assets/site/logo.png";
   const CIRCLE_SRC = "./assets/site/circle.png";
+  /** Cadre affiche carré vitrine : fraction du côté (aligné avec CSS `--gallery-square-frame-pct`). */
+  const SQUARE_FRAME_INSET_DEFAULT = 0.08;
 
   function readTitle(item) {
     return item.customization?.title || "Poster personnalisé";
@@ -269,6 +271,31 @@
     return canvas.toDataURL("image/jpeg", options.quality || 0.88);
   }
 
+  async function renderSquareFramePoster(item, options) {
+    const width = Number(options.width) || 2000;
+    const height = Number(options.height) || width;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+
+    const rawPct = Number(item.frameInsetPct);
+    const insetFrac =
+      Number.isFinite(rawPct) && rawPct > 0 && rawPct < 50 ? rawPct / 100 : SQUARE_FRAME_INSET_DEFAULT;
+    const frameColor = String(item.frameColor || "#ffffff").trim() || "#ffffff";
+    const film = (item.films || [])[0];
+    const img = await loadImage(film?.image);
+
+    ctx.fillStyle = frameColor;
+    ctx.fillRect(0, 0, width, height);
+
+    const insetPx = width * insetFrac;
+    const inner = width - insetPx * 2;
+    drawImageCover(ctx, img, insetPx, insetPx, inner, inner);
+
+    return canvas.toDataURL("image/jpeg", options.quality || 0.88);
+  }
+
   async function renderSelectionPoster(item, options) {
     const width = options.width || 1400;
     const scale = width / 340;
@@ -307,6 +334,9 @@
       await document.fonts.ready;
     }
 
+    if (item.type === "square-frame-poster") {
+      return renderSquareFramePoster(item, options);
+    }
     if (item.type === "selection-poster") {
       return renderSelectionPoster(item, options);
     }
