@@ -959,6 +959,7 @@ img {
   width: 10px;
   height: 10px;
   object-fit: contain;
+  margin-top: 1px;
 }
 
 .gallery-selection-film-title {
@@ -1064,6 +1065,36 @@ img {
   display: none;
 }
 
+/* Croix fermeture modales — style unifié (référence Personnaliser Mon poster) */
+.gallery-customize-close {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  border-radius: 50%;
+  background: #fff;
+  color: #121722;
+  font-size: 26px;
+  line-height: 1;
+  font-family: inherit;
+  box-shadow: 0 4px 16px rgba(17, 24, 39, 0.14);
+  cursor: pointer;
+}
+
+.gallery-customize-close:hover {
+  filter: brightness(1.05);
+}
+
+.gallery-customize-close:focus-visible {
+  outline: 2px solid rgba(28, 168, 227, 0.85);
+  outline-offset: 2px;
+}
+
 .customize-live-card {
   width: min(980px, calc(100vw - 48px));
   max-height: min(86vh, 760px);
@@ -1072,6 +1103,18 @@ img {
   grid-template-columns: minmax(280px, 380px) minmax(280px, 1fr);
   gap: 18px;
   align-items: stretch;
+}
+
+/* Mon poster : fermeture visible au coin de toute la modale (pas seulement la colonne formulaire). */
+.poster-customize-live-card {
+  position: relative;
+}
+
+.poster-customize-live-card > .gallery-customize-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 12;
 }
 
 .gallery-customize-card {
@@ -1090,19 +1133,7 @@ img {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 34px;
-  height: 34px;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  border-radius: 50%;
-  background: #fff;
-  color: #121722;
-  font-size: 24px;
-  line-height: 1;
-  box-shadow: none;
+  z-index: 6;
 }
 
 .customize-live-card > .customize-live-preview {
@@ -1138,7 +1169,7 @@ img {
 }
 
 .poster-customize-preview-panel {
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
 }
@@ -1171,6 +1202,26 @@ img {
   font-size: 12px;
   font-weight: 800;
   text-align: center;
+}
+
+.poster-preview-zoom-hint {
+  margin: 0;
+  padding: 0 6px;
+  max-width: min(52ch, 100%);
+  box-sizing: border-box;
+  justify-self: center;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted, #5c606b);
+  text-align: center;
+}
+
+.poster-large-preview-zoom-controls + .poster-preview-zoom-hint {
+  margin-top: -6px;
+}
+
+.poster-customize-preview-panel .poster-preview-zoom-controls + .poster-preview-zoom-hint {
+  margin-top: -4px;
 }
 
 .poster-customize-preview {
@@ -1228,7 +1279,7 @@ img {
   padding: 22px;
   box-sizing: border-box;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 14px;
   place-items: center;
   overflow: auto;
@@ -1237,11 +1288,11 @@ img {
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
 }
 
-.poster-large-preview-close {
+.poster-large-preview-close.gallery-customize-close {
   position: absolute;
   top: 14px;
   right: 14px;
-  z-index: 5;
+  z-index: 15;
 }
 
 .poster-large-preview-content {
@@ -1259,6 +1310,37 @@ img {
   background: url("assets/site/watermark.png") center / 100% auto no-repeat;
   opacity: 0.32;
   pointer-events: none;
+}
+
+.poster-large-preview-pan-layer,
+.poster-customize-preview-pan-layer {
+  position: relative;
+  z-index: 1;
+  touch-action: none;
+  will-change: transform;
+}
+
+.poster-large-preview-content.is-pannable-poster-preview {
+  cursor: grab;
+  user-select: none;
+}
+
+.poster-large-preview-content.is-pannable-poster-preview.is-dragging-poster-preview {
+  cursor: grabbing;
+}
+
+#posterCustomizePreview.is-pannable-poster-preview {
+  cursor: grab;
+  user-select: none;
+}
+
+#posterCustomizePreview.is-pannable-poster-preview.is-dragging-poster-preview {
+  cursor: grabbing;
+}
+
+#posterCustomizePreview.poster-customize-preview {
+  min-height: 0;
+  max-width: 100%;
 }
 
 .poster-large-preview-content .poster-sheet {
@@ -1309,20 +1391,11 @@ img {
   display: none;
 }
 
-.gallery-lightbox-close {
+.gallery-lightbox-close.gallery-customize-close {
   position: absolute;
   top: 22px;
   right: 26px;
-  width: 44px;
-  height: 44px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  font-size: 30px;
-  line-height: 1;
+  z-index: 1002;
 }
 
 .gallery-lightbox-card {
@@ -2056,7 +2129,7 @@ img {
   box-sizing: border-box;
 }
 
-.poster-editor h3 {
+.poster-editor > h3 {
   margin: 0 0 12px 0;
 }
 
@@ -2360,7 +2433,8 @@ img {
   height: 14px;
   flex-shrink: 0;
   object-fit: contain;
-  margin-bottom: 2px;
+  margin-top: 2px;
+  margin-bottom: 0;
 }
 
 /* TITLE — centré sous la vignette (25 / 48 / 100 ci-dessous) */
@@ -2570,7 +2644,7 @@ img {
 .poster-film .film-circle {
   width: 12px;
   height: 12px;
-  margin: 0 0 1px;
+  margin: 1px 0 0;
 }
 
 .poster-film .film-title {
@@ -2588,11 +2662,12 @@ img {
 }
 
 .poster-sheet:not(.gallery-selection-poster) .poster-grid[data-layout="25"] .poster-film {
-  gap: 8px;
+  gap: 4px;
 }
 
 .poster-sheet:not(.gallery-selection-poster) .poster-grid[data-layout="25"] .poster-film .film-info {
   gap: 4px;
+  padding-bottom: clamp(26px, 3.2cqi, 44px);
 }
 
 .poster-sheet:not(.gallery-selection-poster) .poster-grid[data-layout="25"] .poster-film .film-circle {
@@ -2611,11 +2686,12 @@ img {
 }
 
 .poster-sheet:not(.gallery-selection-poster) .poster-grid[data-layout="48"] .poster-film {
-  gap: 5px;
+  gap: 3px;
 }
 
 .poster-sheet:not(.gallery-selection-poster) .poster-grid[data-layout="48"] .poster-film .film-info {
   gap: 3px;
+  padding-bottom: clamp(18px, 2.3cqi, 32px);
 }
 
 .poster-sheet:not(.gallery-selection-poster) .poster-grid[data-layout="48"] .poster-film .film-circle {
@@ -2634,11 +2710,12 @@ img {
 }
 
 .poster-sheet:not(.gallery-selection-poster) .poster-grid[data-layout="100"] .poster-film {
-  gap: 3px;
+  gap: 2px;
 }
 
 .poster-sheet:not(.gallery-selection-poster) .poster-grid[data-layout="100"] .poster-film .film-info {
   gap: 1px;
+  padding-bottom: clamp(12px, 1.35cqi, 20px);
 }
 
 .poster-sheet:not(.gallery-selection-poster) .poster-grid[data-layout="100"] .poster-film .film-circle {
@@ -3126,7 +3203,7 @@ img {
   display: block;
   width: clamp(1px, 6cqi, 4px);
   height: clamp(1px, 6cqi, 4px);
-  margin: 0 auto;
+  margin: clamp(1px, 0.35cqi, 3px) auto 0;
   flex-shrink: 0;
 }
 
@@ -4010,23 +4087,11 @@ button:hover {
   text-transform: uppercase;
 }
 
-.cart-preview-close {
+.cart-preview-close.gallery-customize-close {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 36px;
-  height: 36px;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  border-radius: 50%;
-  background: #fff;
-  color: #121722;
-  font-size: 25px;
-  line-height: 1;
-  box-shadow: none;
+  z-index: 6;
 }
 
 .cart-preview-content {

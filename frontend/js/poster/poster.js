@@ -8,6 +8,10 @@ var posterCustomizePreviewFrame = 0;
 var posterCustomizePreviewNeedsRefresh = false;
 var posterCustomizePreviewZoom = 1;
 var posterLargePreviewZoom = 1;
+var posterLargePreviewPanX = 0;
+var posterLargePreviewPanY = 0;
+var posterCustomizePreviewPanX = 0;
+var posterCustomizePreviewPanY = 0;
 
 function schedulePosterLayoutMetrics() {
   if (posterLayoutFrame) return;
@@ -18,27 +22,101 @@ function schedulePosterLayoutMetrics() {
   });
 }
 
+function applyPosterLargePreviewPanTransform() {
+  const content = document.getElementById("posterLargePreviewContent");
+  const panWrap = content?.querySelector(".poster-large-preview-pan-layer");
+  if (!content || !panWrap) return;
+
+  const availW = content.clientWidth;
+  const availH = content.clientHeight;
+  const pw = panWrap.offsetWidth;
+  const ph = panWrap.offsetHeight;
+
+  if (pw <= availW) posterLargePreviewPanX = 0;
+  else posterLargePreviewPanX = Math.min(0, Math.max(availW - pw, posterLargePreviewPanX));
+
+  if (ph <= availH) posterLargePreviewPanY = 0;
+  else posterLargePreviewPanY = Math.min(0, Math.max(availH - ph, posterLargePreviewPanY));
+
+  const cx = pw <= availW ? (availW - pw) / 2 : 0;
+  const cy = ph <= availH ? (availH - ph) / 2 : 0;
+
+  panWrap.style.transform = `translate(${cx + posterLargePreviewPanX}px, ${cy + posterLargePreviewPanY}px)`;
+}
+
+function applyPosterCustomizePreviewPanTransform() {
+  const preview = document.getElementById("posterCustomizePreview");
+  const panWrap = preview?.querySelector(".poster-customize-preview-pan-layer");
+  if (!preview || !panWrap) return;
+
+  const availW = preview.clientWidth;
+  const availH = preview.clientHeight;
+  const pw = panWrap.offsetWidth;
+  const ph = panWrap.offsetHeight;
+
+  if (pw <= availW) posterCustomizePreviewPanX = 0;
+  else posterCustomizePreviewPanX = Math.min(0, Math.max(availW - pw, posterCustomizePreviewPanX));
+
+  if (ph <= availH) posterCustomizePreviewPanY = 0;
+  else posterCustomizePreviewPanY = Math.min(0, Math.max(availH - ph, posterCustomizePreviewPanY));
+
+  const cx = pw <= availW ? (availW - pw) / 2 : 0;
+  const cy = ph <= availH ? (availH - ph) / 2 : 0;
+
+  panWrap.style.transform = `translate(${cx + posterCustomizePreviewPanX}px, ${cy + posterCustomizePreviewPanY}px)`;
+}
+
 function sizePosterCustomizePreviewClone(clone) {
   const preview = document.getElementById("posterCustomizePreview");
   if (!preview || !clone || !poster) return;
 
+  const panWrap = clone.closest(".poster-customize-preview-pan-layer");
+  if (!panWrap) return;
+
   const frame = preview.closest(".customize-live-preview");
+  const zoomControls = document.querySelector(".poster-customize-preview-panel .poster-preview-zoom-controls");
+
   const baseWidth = poster.offsetWidth || 1587;
   const baseHeight = poster.offsetHeight || 2245;
+
+  const api = window.MppPosterPreviewHost;
+  if (api) {
+    api.preparePosterSheetForA2Measure(clone);
+    void clone.offsetWidth;
+    api.syncPosterSheetLayoutMetrics(clone);
+    void clone.offsetWidth;
+  }
+
   const availableWidth = Math.max(240, (frame?.clientWidth || 560) - 36);
-  const zoomControls = document.querySelector(".poster-preview-zoom-controls");
   const availableHeight = Math.max(
     320,
     (frame?.clientHeight || window.innerHeight * 0.78) - 48 - (zoomControls?.offsetHeight || 0)
   );
+
   const fitScale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight, 0.42);
   const scale = fitScale * posterCustomizePreviewZoom;
 
-  preview.style.width = `${Math.ceil(baseWidth * scale)}px`;
-  preview.style.height = `${Math.ceil(baseHeight * scale)}px`;
-  preview.style.maxWidth = "none";
-  preview.style.maxHeight = "none";
+  preview.style.width = `${Math.floor(availableWidth)}px`;
+  preview.style.height = `${Math.floor(availableHeight)}px`;
+  preview.style.maxWidth = "100%";
+  preview.style.overflow = "hidden";
+  preview.style.boxSizing = "border-box";
+
+  panWrap.style.width = `${Math.ceil(baseWidth * scale)}px`;
+  panWrap.style.height = `${Math.ceil(baseHeight * scale)}px`;
+
+  clone.style.transformOrigin = "top left";
   clone.style.transform = `scale(${scale})`;
+
+  void preview.offsetWidth;
+
+  const vw = preview.clientWidth;
+  const vh = preview.clientHeight;
+  const pw = panWrap.offsetWidth;
+  const ph = panWrap.offsetHeight;
+  preview.classList.toggle("is-pannable-poster-preview", pw > vw + 1 || ph > vh + 1);
+
+  applyPosterCustomizePreviewPanTransform();
 }
 
 function updatePosterCustomizeZoomControls() {
@@ -47,6 +125,8 @@ function updatePosterCustomizeZoomControls() {
 }
 
 function setPosterCustomizePreviewZoom(nextZoom) {
+  posterCustomizePreviewPanX = 0;
+  posterCustomizePreviewPanY = 0;
   posterCustomizePreviewZoom = Math.min(2, Math.max(0.6, nextZoom));
   updatePosterCustomizeZoomControls();
   schedulePosterCustomizePreview();
@@ -58,6 +138,8 @@ function updatePosterLargePreviewZoomControls() {
 }
 
 function setPosterLargePreviewZoom(nextZoom) {
+  posterLargePreviewPanX = 0;
+  posterLargePreviewPanY = 0;
   posterLargePreviewZoom = Math.min(2.4, Math.max(0.6, nextZoom));
   updatePosterLargePreviewZoomControls();
   requestAnimationFrame(refreshPosterLargePreview);
@@ -106,10 +188,15 @@ function refreshPosterCustomizePreview() {
   if (!modal || modal.hidden || !preview || !poster || poster.style.display === "none") return;
 
   preview.innerHTML = "";
+  posterCustomizePreviewPanX = 0;
+  posterCustomizePreviewPanY = 0;
+  const panWrap = document.createElement("div");
+  panWrap.className = "poster-customize-preview-pan-layer";
   const clone = poster.cloneNode(true);
   stripIdsFromElement(clone);
   clone.classList.add("customize-live-poster-clone");
-  preview.appendChild(clone);
+  panWrap.appendChild(clone);
+  preview.appendChild(panWrap);
   sizePosterCustomizePreviewClone(clone);
 }
 
@@ -128,6 +215,8 @@ function schedulePosterCustomizePreview(options = {}) {
 function openPosterCustomizer() {
   const modal = document.getElementById("posterCustomizeModal");
   if (!modal) return;
+  posterCustomizePreviewPanX = 0;
+  posterCustomizePreviewPanY = 0;
   posterTextCustomizer?.writeControls();
   updatePosterCustomizeZoomControls();
   modal.hidden = false;
@@ -138,6 +227,8 @@ function openPosterCustomizer() {
 function closePosterCustomizer() {
   const modal = document.getElementById("posterCustomizeModal");
   if (modal) modal.hidden = true;
+  posterCustomizePreviewPanX = 0;
+  posterCustomizePreviewPanY = 0;
   const preview = document.getElementById("posterCustomizePreview");
   if (preview) preview.innerHTML = "";
 }
@@ -282,9 +373,9 @@ function generatePoster(films) {
     circle.loading = "eager";
     protectImageElement(circle);
 
-    info.appendChild(circle);
     info.appendChild(titleEl);
     info.appendChild(yearEl);
+    info.appendChild(circle);
     card.appendChild(img);
     card.appendChild(info);
 
@@ -442,6 +533,9 @@ function sizePosterLargePreviewClone(clone) {
   const api = window.MppPosterPreviewHost;
   if (!modal || !content || !posterEl || !clone) return;
 
+  const panWrap = clone.closest(".poster-large-preview-pan-layer");
+  if (!panWrap) return;
+
   const card = modal.querySelector(".poster-large-preview-card");
   const zoomControls = modal.querySelector(".poster-large-preview-zoom-controls");
   const baseWidth = posterEl.offsetWidth || 1587;
@@ -452,33 +546,40 @@ function sizePosterLargePreviewClone(clone) {
     void clone.offsetWidth;
     api.syncPosterSheetLayoutMetrics(clone);
     void clone.offsetWidth;
-    api.sizePosterSheetInHost(clone, content, {
-      sizingEl: card,
-      fallbackWidth: baseWidth,
-      fallbackHeight: baseHeight,
-      maxFitScale: 0.72 * posterLargePreviewZoom,
-      horizontalPad: 56,
-      verticalPad: 70 + (zoomControls?.offsetHeight || 0),
-      hostMaxWidth: "none",
-      hostMaxHeight: "none",
-      transformOrigin: "top left",
-    });
-    return;
   }
 
-  const availableWidth = Math.max(280, (card?.clientWidth || window.innerWidth * 0.92) - 56);
-  const availableHeight = Math.max(
+  const availWidth = Math.max(280, (card?.clientWidth || window.innerWidth * 0.92) - 56);
+  const availHeight = Math.max(
     360,
     (card?.clientHeight || window.innerHeight * 0.9) - 70 - (zoomControls?.offsetHeight || 0)
   );
-  const fitScale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight, 0.72);
+
+  const fitCap = 0.72;
+  const fitScale = Math.min(availWidth / baseWidth, availHeight / baseHeight, fitCap);
   const scale = fitScale * posterLargePreviewZoom;
 
-  content.style.width = `${Math.ceil(baseWidth * scale)}px`;
-  content.style.height = `${Math.ceil(baseHeight * scale)}px`;
-  content.style.maxWidth = "none";
-  content.style.maxHeight = "none";
+  content.style.width = `${Math.floor(availWidth)}px`;
+  content.style.height = `${Math.floor(availHeight)}px`;
+  content.style.maxWidth = "100%";
+  content.style.overflow = "hidden";
+  content.style.boxSizing = "border-box";
+  content.style.position = "relative";
+
+  panWrap.style.width = `${Math.ceil(baseWidth * scale)}px`;
+  panWrap.style.height = `${Math.ceil(baseHeight * scale)}px`;
+
+  clone.style.transformOrigin = "top left";
   clone.style.transform = `scale(${scale})`;
+
+  void content.offsetWidth;
+
+  const vw = content.clientWidth;
+  const vh = content.clientHeight;
+  const pw = panWrap.offsetWidth;
+  const ph = panWrap.offsetHeight;
+  content.classList.toggle("is-pannable-poster-preview", pw > vw + 1 || ph > vh + 1);
+
+  applyPosterLargePreviewPanTransform();
 }
 
 function refreshPosterLargePreview() {
@@ -487,13 +588,17 @@ function refreshPosterLargePreview() {
   const posterEl = document.getElementById("posterContainer");
   if (!modal || modal.hidden || !content || !posterEl || posterEl.style.display === "none") return;
 
+  const panWrap = content.querySelector(".poster-large-preview-pan-layer");
   let clone = content.querySelector(".poster-large-preview-clone");
-  if (!clone) {
+  if (!panWrap || !clone) {
     content.innerHTML = "";
+    const wrap = document.createElement("div");
+    wrap.className = "poster-large-preview-pan-layer";
     clone = posterEl.cloneNode(true);
     stripIdsFromElement(clone);
     clone.classList.add("poster-large-preview-clone");
-    content.appendChild(clone);
+    wrap.appendChild(clone);
+    content.appendChild(wrap);
   }
 
   sizePosterLargePreviewClone(clone);
@@ -502,6 +607,8 @@ function refreshPosterLargePreview() {
 function openPosterLargePreview() {
   const modal = document.getElementById("posterLargePreviewModal");
   if (!modal) return;
+  posterLargePreviewPanX = 0;
+  posterLargePreviewPanY = 0;
   modal.hidden = false;
   updatePosterLargePreviewZoomControls();
   requestAnimationFrame(refreshPosterLargePreview);
@@ -511,8 +618,98 @@ function openPosterLargePreview() {
 function closePosterLargePreview() {
   const modal = document.getElementById("posterLargePreviewModal");
   if (modal) modal.hidden = true;
+  posterLargePreviewPanX = 0;
+  posterLargePreviewPanY = 0;
   const content = document.getElementById("posterLargePreviewContent");
   if (content) content.innerHTML = "";
+}
+
+function setupPosterPreviewPanInteractions() {
+  const largeContent = document.getElementById("posterLargePreviewContent");
+  if (largeContent && largeContent.dataset.mppPanBound !== "1") {
+    largeContent.dataset.mppPanBound = "1";
+    let dragging = false;
+    let pid = null;
+    let lx = 0;
+    let ly = 0;
+
+    largeContent.addEventListener("pointerdown", (e) => {
+      if (!largeContent.classList.contains("is-pannable-poster-preview")) return;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      dragging = true;
+      pid = e.pointerId;
+      lx = e.clientX;
+      ly = e.clientY;
+      largeContent.classList.add("is-dragging-poster-preview");
+      largeContent.setPointerCapture(e.pointerId);
+    });
+
+    largeContent.addEventListener("pointermove", (e) => {
+      if (!dragging || e.pointerId !== pid) return;
+      posterLargePreviewPanX += e.clientX - lx;
+      posterLargePreviewPanY += e.clientY - ly;
+      lx = e.clientX;
+      ly = e.clientY;
+      applyPosterLargePreviewPanTransform();
+    });
+
+    function endLargePan(e) {
+      if (!dragging || e.pointerId !== pid) return;
+      dragging = false;
+      pid = null;
+      largeContent.classList.remove("is-dragging-poster-preview");
+      applyPosterLargePreviewPanTransform();
+      try {
+        largeContent.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+    }
+
+    largeContent.addEventListener("pointerup", endLargePan);
+    largeContent.addEventListener("pointercancel", endLargePan);
+  }
+
+  const customizePreview = document.getElementById("posterCustomizePreview");
+  if (customizePreview && customizePreview.dataset.mppPanBound !== "1") {
+    customizePreview.dataset.mppPanBound = "1";
+    let dragging = false;
+    let pid = null;
+    let lx = 0;
+    let ly = 0;
+
+    customizePreview.addEventListener("pointerdown", (e) => {
+      if (!customizePreview.classList.contains("is-pannable-poster-preview")) return;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      dragging = true;
+      pid = e.pointerId;
+      lx = e.clientX;
+      ly = e.clientY;
+      customizePreview.classList.add("is-dragging-poster-preview");
+      customizePreview.setPointerCapture(e.pointerId);
+    });
+
+    customizePreview.addEventListener("pointermove", (e) => {
+      if (!dragging || e.pointerId !== pid) return;
+      posterCustomizePreviewPanX += e.clientX - lx;
+      posterCustomizePreviewPanY += e.clientY - ly;
+      lx = e.clientX;
+      ly = e.clientY;
+      applyPosterCustomizePreviewPanTransform();
+    });
+
+    function endCustomizePan(e) {
+      if (!dragging || e.pointerId !== pid) return;
+      dragging = false;
+      pid = null;
+      customizePreview.classList.remove("is-dragging-poster-preview");
+      applyPosterCustomizePreviewPanTransform();
+      try {
+        customizePreview.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+    }
+
+    customizePreview.addEventListener("pointerup", endCustomizePan);
+    customizePreview.addEventListener("pointercancel", endCustomizePan);
+  }
 }
 
 var posterTextCustomizer = null;
@@ -688,6 +885,8 @@ function bindPosterEditor() {
   });
   updatePosterCustomizeZoomControls();
   updatePosterLargePreviewZoomControls();
+
+  setupPosterPreviewPanInteractions();
 
   syncPosterFormatToolbar();
   syncPosterFontSizeLabels();

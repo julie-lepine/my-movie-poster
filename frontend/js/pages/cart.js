@@ -346,9 +346,9 @@ function createCartQuizFilmCard(film, options = {}) {
   if (options.lazyImages) circle.loading = "lazy";
   protectImageElement(circle);
 
-  info.appendChild(circle);
   info.appendChild(title);
   info.appendChild(year);
+  info.appendChild(circle);
   card.appendChild(img);
   card.appendChild(info);
 
@@ -480,9 +480,9 @@ function createCartSelectionFilmCard(film) {
   year.className = "gallery-selection-film-year";
   year.textContent = film.year || "";
 
-  info.appendChild(circle);
   info.appendChild(title);
   info.appendChild(year);
+  info.appendChild(circle);
   item.appendChild(img);
   item.appendChild(info);
 

@@ -132,14 +132,15 @@
         <button id="posterLargePreviewZoomIn" type="button" aria-label="Zoomer">+</button>
         <button id="posterLargePreviewZoomReset" type="button">Réinitialiser</button>
       </div>
+      <p class="poster-preview-zoom-hint">Maintiens et fais glisser pour déplacer l’affiche lorsque le zoom dépasse la fenêtre.</p>
       <div id="posterLargePreviewContent" class="poster-large-preview-content"></div>
     </div>
   </div>
 
   <div id="posterCustomizeModal" class="gallery-customize-modal poster-customize-modal" hidden role="dialog" aria-modal="true" aria-labelledby="posterCustomizeTitle">
-    <div id="posterCustomizeCard" class="customize-live-card">
+    <div id="posterCustomizeCard" class="customize-live-card poster-customize-live-card">
+      <button id="posterCustomizeClose" type="button" class="gallery-customize-close" aria-label="Fermer la personnalisation">×</button>
       <section id="posterEditor" class="poster-editor customize-controls" aria-labelledby="posterCustomizeTitle">
-      <button id="posterCustomizeClose" class="gallery-customize-close" type="button" aria-label="Fermer la personnalisation">×</button>
       <h3 id="posterCustomizeTitle">Personnaliser</h3>
       <label for="posterCountSelect"><strong>Nombre d'images</strong></label>
       <select id="posterCountSelect">
@@ -240,6 +241,7 @@
           <button id="posterPreviewZoomIn" type="button" aria-label="Zoomer">+</button>
           <button id="posterPreviewZoomReset" type="button">Réinitialiser</button>
         </div>
+        <p class="poster-preview-zoom-hint">Maintiens et fais glisser pour déplacer l’affiche lorsque le zoom dépasse la fenêtre.</p>
         <div id="posterCustomizePreview" class="customize-live-preview-inner poster-customize-preview poster-preview-watermark"></div>
       </aside>
     </div>

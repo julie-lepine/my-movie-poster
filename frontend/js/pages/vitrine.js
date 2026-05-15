@@ -523,9 +523,9 @@ function createGallerySelectionItem(film, layoutCount) {
   year.className = "film-year";
   year.textContent = film.year || "";
 
-  info.appendChild(circle);
   info.appendChild(title);
   info.appendChild(year);
+  info.appendChild(circle);
   item.appendChild(img);
   item.appendChild(info);
 
