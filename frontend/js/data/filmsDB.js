@@ -106,7 +106,7 @@ const filmsDB = [
     image: "./assets/img/Cloud Atlas.jpg",
     tags: ["melancolie", "sombre", "nature", "soleil"],
     genre: ["Aventure", "Drame", "Science-fiction"],
-    realisateur: "Lana Wachowski, Lilly Wachowski",
+    realisateur: ["Lana Wachowski", "Lilly Wachowski"],
     couleurs: ["blue", "white", "black"],
   },
   {
@@ -610,7 +610,7 @@ const filmsDB = [
     image: "./assets/img/Matrix.jpg",
     tags: ["psychologique", "imaginaire", "renouveau"],
     genre: ["Action", "Science-fiction", "Arts martiaux"],
-    realisateur: ["Andy Wachowski", "Larry Wachowski"],
+    realisateur: ["Lana Wachowski", "Lilly Wachowski"],
     couleurs: ["black", "blue", "red"],
   },
   {
