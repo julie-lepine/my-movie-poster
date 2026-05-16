@@ -165,19 +165,57 @@
     };
   }
 
+  let accountCartPreviewLoadPromise = null;
+
+  function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = src;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Impossible de charger ${src}.`));
+      document.head.appendChild(script);
+    });
+  }
+
+  async function ensureAccountCartPreview() {
+    if (window.MppCartPreview?.openCartPreview) return window.MppCartPreview;
+
+    if (!accountCartPreviewLoadPromise) {
+      accountCartPreviewLoadPromise = (async () => {
+        await loadScriptOnce("js/core/gallery-selection-layout.js");
+        await loadScriptOnce("js/poster/poster-preview-host.js");
+        await loadScriptOnce("js/pages/cart.js");
+        return window.MppCartPreview;
+      })().catch((error) => {
+        accountCartPreviewLoadPromise = null;
+        throw error;
+      });
+    }
+
+    const api = await accountCartPreviewLoadPromise;
+    if (!api?.openCartPreview) {
+      throw new Error("Aperçu indisponible.");
+    }
+    return api;
+  }
+
   function renderCreationCard(creation) {
     const item = buildCreationCartItem(creation);
     const card = document.createElement("article");
     card.className = "account-creation-card cart-item";
 
-    const preview = document.createElement("div");
-    preview.className = "account-creation-preview cart-item-preview cart-item-preview--live";
-
-    if (window.MppCartPreview?.createPosterPreview) {
-      preview.appendChild(window.MppCartPreview.createPosterPreview(item, "thumbnail"));
-    } else {
-      preview.classList.add("account-creation-preview--empty");
-    }
+    const preview =
+      window.MppCreations?.buildAccountCreationPreview?.(item) ||
+      (() => {
+        const empty = document.createElement("div");
+        empty.className = "account-creation-preview account-creation-preview--empty";
+        return empty;
+      })();
 
     const body = document.createElement("div");
     body.className = "account-creation-body";
@@ -204,8 +242,16 @@
     viewBtn.type = "button";
     viewBtn.className = "account-creation-btn account-creation-btn--view";
     viewBtn.textContent = "Visualiser le poster";
-    viewBtn.addEventListener("click", () => {
-      window.MppCartPreview?.openCartPreview?.(item);
+    viewBtn.addEventListener("click", async () => {
+      viewBtn.disabled = true;
+      try {
+        const api = await ensureAccountCartPreview();
+        api.openCartPreview(item);
+      } catch (error) {
+        setFeedback(cardFeedback, error.message || "Impossible d'ouvrir l'aperçu.", true);
+      } finally {
+        viewBtn.disabled = false;
+      }
     });
 
     const cartBtn = document.createElement("button");
@@ -265,7 +311,6 @@
     setFeedback(creationsFeedback, "");
 
     try {
-      window.MppCartPreview?.teardownThumbnailPipeline?.();
       const items = await window.MppCreations.list();
       creationsList.replaceChildren();
       const hasItems = items.length > 0;
@@ -275,9 +320,6 @@
       items.forEach((creation) => {
         creationsList.appendChild(renderCreationCard(creation));
       });
-
-      window.MppCartPreview?.protectImagesIn?.(creationsList);
-      window.MppCartPreview?.mountThumbnailPipeline?.(creationsList);
     } catch (error) {
       syncCreationsToolbar(false);
       setFeedback(creationsFeedback, error.message || "Impossible de charger les créations.", true);
@@ -298,7 +340,6 @@
     setFeedback(creationsFeedback, "Suppression...");
 
     try {
-      window.MppCartPreview?.teardownThumbnailPipeline?.();
       await window.MppCreations.removeAll();
       creationsList?.replaceChildren();
       if (creationsEmpty) creationsEmpty.hidden = false;

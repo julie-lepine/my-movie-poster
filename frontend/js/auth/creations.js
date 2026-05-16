@@ -107,6 +107,49 @@
     return image.replace(/(^|\/)assets\/img\//, "$1assets/img/thumbs/");
   }
 
+  function getPreviewGridCols(count) {
+    if (count <= 1) return 1;
+    if (count <= 4) return 2;
+    return 3;
+  }
+
+  /** Aperçu léger pour Mes créations (mosaïque thumbs, pas de poster DOM live). */
+  function buildAccountCreationPreview(item) {
+    const wrap = document.createElement("div");
+    wrap.className = "account-creation-preview";
+
+    const films = (item?.films || []).filter((film) => film?.image);
+    if (!films.length) {
+      wrap.classList.add("account-creation-preview--empty");
+      return wrap;
+    }
+
+    const maxCells = item?.type === "square-frame-poster" ? 1 : 9;
+    const cells = films.slice(0, maxCells);
+    const cols = getPreviewGridCols(cells.length);
+
+    const grid = document.createElement("div");
+    grid.className = "account-creation-preview-grid";
+    grid.style.setProperty("--account-preview-cols", String(cols));
+
+    cells.forEach((film) => {
+      const img = document.createElement("img");
+      img.src = getThumbSrc(film.image);
+      img.alt = "";
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.draggable = false;
+      grid.appendChild(img);
+    });
+
+    const badge = document.createElement("span");
+    badge.className = "account-creation-preview-badge";
+    badge.textContent = `${films.length} film${films.length > 1 ? "s" : ""}`;
+
+    wrap.append(grid, badge);
+    return wrap;
+  }
+
   window.MppCreations = {
     getCreationTitle,
     getCreationSubtitle,
@@ -116,5 +159,6 @@
     removeAll,
     addPayloadToCart,
     getThumbSrc,
+    buildAccountCreationPreview,
   };
 })();

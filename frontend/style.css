@@ -5653,15 +5653,50 @@ button:hover {
   box-shadow: 0 8px 20px rgba(28, 168, 227, 0.08);
 }
 
-.account-creation-preview.cart-item-preview--live {
+.account-creation-preview {
+  position: relative;
   min-width: 0;
-  min-height: 0;
+  min-height: 160px;
+  aspect-ratio: 420 / 594;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e8ecf0;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.account-creation-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--account-preview-cols, 2), 1fr);
+  width: 100%;
+  height: 100%;
+  gap: 2px;
+}
+
+.account-creation-preview-grid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: rgba(17, 24, 39, 0.06);
+}
+
+.account-creation-preview-badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(18, 23, 34, 0.82);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  pointer-events: none;
 }
 
 .account-creation-preview--empty {
   display: grid;
   place-items: center;
-  min-height: 160px;
   background: #e9e9e9;
   color: var(--muted);
   font-size: 13px;
