@@ -806,7 +806,7 @@ function renderGallerySelection() {
       selectedCount > 1 ? "s" : ""
     } sélectionné${selectedCount > 1 ? "s" : ""}`;
   }
-  document.querySelectorAll("#gallerySideAddToCart").forEach((button) => {
+  document.querySelectorAll("#gallerySideAddToCart, #gallerySideSaveCreation").forEach((button) => {
     button.disabled = selectedCount === 0;
   });
   syncGallerySelectionActionButtons();
@@ -897,8 +897,8 @@ function isGalleryCustomizerEventInsideCard(event, card) {
   return event.target instanceof Node && card.contains(event.target);
 }
 
-async function addGallerySelectionToCart() {
-  if (!galleryState.selectedFilms.length) return;
+function buildGalleryCartItem() {
+  if (!galleryState.selectedFilms.length) return null;
   const filmsToShow = galleryState.selectedFilms.slice(0, GALLERY_SELECTION_MAX_COUNT);
   const selectionLayout = window.getGallerySelectionLayout(filmsToShow.length);
 
@@ -908,24 +908,30 @@ async function addGallerySelectionToCart() {
     image: film.image,
   }));
 
-  const cartItem =
-    filmsToShow.length === 1
-      ? {
-          type: "square-frame-poster",
-          addedAt: new Date().toISOString(),
-          frameInsetPct: GALLERY_SQUARE_FRAME_INSET_PCT,
-          frameColor: normalizeGalleryHexColor(galleryState.squareFrameColor),
-          films: filmsPayload,
-        }
-      : {
-          type: "selection-poster",
-          addedAt: new Date().toISOString(),
-          customization: galleryTextCustomizer?.getState() || galleryState.customization,
-          layoutCount: selectionLayout.layoutCount,
-          posterCols: selectionLayout.cols,
-          posterRows: selectionLayout.rows,
-          films: filmsPayload,
-        };
+  if (filmsToShow.length === 1) {
+    return {
+      type: "square-frame-poster",
+      addedAt: new Date().toISOString(),
+      frameInsetPct: GALLERY_SQUARE_FRAME_INSET_PCT,
+      frameColor: normalizeGalleryHexColor(galleryState.squareFrameColor),
+      films: filmsPayload,
+    };
+  }
+
+  return {
+    type: "selection-poster",
+    addedAt: new Date().toISOString(),
+    customization: galleryTextCustomizer?.getState() || galleryState.customization,
+    layoutCount: selectionLayout.layoutCount,
+    posterCols: selectionLayout.cols,
+    posterRows: selectionLayout.rows,
+    films: filmsPayload,
+  };
+}
+
+async function addGallerySelectionToCart() {
+  const cartItem = buildGalleryCartItem();
+  if (!cartItem) return;
 
   setGalleryCartFeedback("Ajout au panier...");
 
@@ -939,6 +945,14 @@ async function addGallerySelectionToCart() {
   }
 
   setGalleryCartFeedback("Poster ajouté au panier.");
+}
+
+async function saveGalleryToAccount() {
+  if (!window.MppSaveCreation?.runSave) return;
+  await window.MppSaveCreation.runSave(
+    buildGalleryCartItem,
+    ".gallery-cart-feedback, .gallery-side-cart-feedback"
+  );
 }
 
 function setGalleryCartFeedback(message) {
@@ -1025,6 +1039,7 @@ function setupGalleryCustomizer() {
   document.getElementById("galleryCustomizeClose")?.addEventListener("click", closeGalleryCustomizer);
   document.getElementById("galleryClearSelection")?.addEventListener("click", clearGallerySelection);
   document.getElementById("gallerySideAddToCart")?.addEventListener("click", addGallerySelectionToCart);
+  document.getElementById("gallerySideSaveCreation")?.addEventListener("click", saveGalleryToAccount);
   document.getElementById("galleryCustomizeValidate")?.addEventListener("click", closeGalleryCustomizer);
 
   const galleryCustomizeModal = document.getElementById("galleryCustomizeModal");

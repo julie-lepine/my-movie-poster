@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Connexion - My Movies Poster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<header class="site-header">
+  <div class="site-topbar" aria-label="Navigation secondaire">
+    <div class="site-account-links" style="margin-left: auto;">
+      <a class="site-account-link" data-account-link href="connexion.html">
+        <img class="site-account-icon" src="./assets/site/user.png" alt="" aria-hidden="true" decoding="async" />
+        <span data-account-label>Inscription / Connexion</span>
+      </a>
+      <a class="site-account-link site-account-link--cart" href="panier.html">
+        <span class="site-cart-icon-wrap">
+          <img class="site-account-icon" src="./assets/site/cart.png" alt="" aria-hidden="true" decoding="async" />
+          <span class="site-cart-badge" data-cart-count hidden>0</span>
+        </span>
+        <span>Panier</span>
+      </a>
+    </div>
+  </div>
+  <nav class="site-nav">
+    <a href="index.html" class="site-nav-link">Accueil</a>
+    <a href="vitrine.html" class="site-nav-link">Vitrine</a>
+    <img class="site-logo" src="./assets/site/logo.png" alt="My Movies Poster" decoding="async" />
+    <a href="mon-poster.html" class="site-nav-link">Mon Poster</a>
+    <a href="faq.html" class="site-nav-link">FAQ</a>
+  </nav>
+</header>
+
+<main class="page-content">
+  <section class="auth-page" aria-labelledby="loginTitle">
+    <div class="auth-card">
+      <h1 id="loginTitle">Connexion</h1>
+      <p class="auth-lead">Accède à ton compte et à tes créations sauvegardées.</p>
+
+      <p class="auth-config-warning" data-auth-config-warning hidden>
+        Supabase n'est pas encore configuré. Copie <code>js/auth/config.example.js</code> vers <code>config.js</code> et ajoute tes clés.
+      </p>
+
+      <form id="loginForm" class="auth-form" novalidate>
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" name="email" type="email" autocomplete="email" required />
+
+        <label for="loginPassword">Mot de passe</label>
+        <div class="auth-password-field">
+          <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
+          <button type="button" class="auth-password-toggle" data-password-toggle="loginPassword" aria-label="Afficher le mot de passe" aria-pressed="false">
+            <svg class="auth-password-icon auth-password-icon--show" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 5c-5 0-9.27 3.11-11 7.5 1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            <svg class="auth-password-icon auth-password-icon--hide" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75C21.27 7.11 17 4 12 4c-1.48 0-2.85.43-4.01 1.17l2.16 2.16A5.99 5.99 0 0 1 12 7zM2.71 3.16 1.29 4.58l18.13 18.13 1.41-1.41L4.12 2.75 2.71 3.16zM12 19c-5 0-9.27-3.11-11-7.5 1.73-4.39 6-7.5 11-7.5 1.12 0 2.18.22 3.15.6l1.46-1.46A9.83 9.83 0 0 1 12 19z"/></svg>
+          </button>
+        </div>
+
+        <button type="submit" class="auth-submit">Se connecter</button>
+        <p id="loginFeedback" class="auth-feedback" aria-live="polite"></p>
+      </form>
+
+      <p class="auth-switch">
+        Pas encore de compte ?
+        <a href="inscription.html">S'inscrire</a>
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="#">Qui sommes-nous</a>
+    <a href="#">Contactez-nous</a>
+    <a href="#">Conditions Générales de Vente</a>
+    <a href="#">Mentions légales</a>
+  </div>
+  <img class="site-logo footer-logo" src="./assets/site/logo.png" alt="My Movies Poster" loading="lazy" decoding="async" />
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/auth/config.js"></script>
+<script src="js/auth/mpp-auth.js"></script>
+<script src="js/auth/creations.js"></script>
+<script src="js/auth/password-toggle.js"></script>
+<script src="js/auth/login.js"></script>
+<script src="js/common.js"></script>
+</body>
+</html>

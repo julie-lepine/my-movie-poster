@@ -787,15 +787,15 @@ function applyPosterTypographyFromEditor() {
   syncPosterTextCustomization();
 }
 
-async function addPosterToCart() {
+function buildQuizPosterCartItem() {
   const requestedCount = Number(posterCountSelect?.value || 100);
   const allowedCounts = [25, 48, 100];
   const safeCount = allowedCounts.includes(requestedCount) ? requestedCount : 100;
   const filmsToShow = currentFilms.filter((film) => film?.image).slice(0, safeCount);
 
-  if (!filmsToShow.length) return;
+  if (!filmsToShow.length) return null;
 
-  const cartItem = {
+  return {
     type: "quiz-poster",
     addedAt: new Date().toISOString(),
     customization: posterTextCustomizer?.getState() || {},
@@ -806,6 +806,11 @@ async function addPosterToCart() {
       image: film.image,
     })),
   };
+}
+
+async function addPosterToCart() {
+  const cartItem = buildQuizPosterCartItem();
+  if (!cartItem) return;
 
   setPosterCartFeedback("Ajout au panier...");
 
@@ -819,6 +824,14 @@ async function addPosterToCart() {
   }
 
   setPosterCartFeedback("Poster ajouté au panier.");
+}
+
+async function savePosterToAccount() {
+  if (!window.MppSaveCreation?.runSave) return;
+  await window.MppSaveCreation.runSave(
+    buildQuizPosterCartItem,
+    ".poster-cart-feedback, .poster-side-cart-feedback"
+  );
 }
 
 function setPosterCartFeedback(message) {
@@ -927,6 +940,7 @@ function bindPosterEditor() {
   });
   document.getElementById("posterCustomizeValidate")?.addEventListener("click", closePosterCustomizer);
   document.getElementById("posterSideAddToCart")?.addEventListener("click", addPosterToCart);
+  document.getElementById("posterSideSaveCreation")?.addEventListener("click", savePosterToAccount);
   document.getElementById("posterPreviewZoomOut")?.addEventListener("click", () => {
     setPosterCustomizePreviewZoom(posterCustomizePreviewZoom - 0.2);
   });

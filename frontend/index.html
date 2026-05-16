@@ -17,9 +17,9 @@
 <header class="site-header">
   <div class="site-topbar" aria-label="Navigation secondaire">
     <div class="site-account-links" style="margin-left: auto;">
-      <a class="site-account-link" href="#">
+      <a class="site-account-link" data-account-link href="connexion.html">
         <img class="site-account-icon" src="./assets/site/user.png" alt="" aria-hidden="true" decoding="async" />
-        <span>Inscription / Connexion</span>
+        <span data-account-label>Inscription / Connexion</span>
       </a>
       <a class="site-account-link site-account-link--cart" href="panier.html">
         <span class="site-cart-icon-wrap">
@@ -137,6 +137,10 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/auth/config.js"></script>
+<script src="js/auth/mpp-auth.js"></script>
+<script src="js/auth/creations.js"></script>
 <script src="js/common.js"></script>
 </body>
 </html>

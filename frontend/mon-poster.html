@@ -16,9 +16,9 @@
 <header class="site-header">
   <div class="site-topbar" aria-label="Navigation secondaire">
     <div class="site-account-links" style="margin-left: auto;">
-      <a class="site-account-link" href="#">
+      <a class="site-account-link" data-account-link href="connexion.html">
         <img class="site-account-icon" src="./assets/site/user.png" alt="" aria-hidden="true" decoding="async" />
-        <span>Inscription / Connexion</span>
+        <span data-account-label>Inscription / Connexion</span>
       </a>
       <a class="site-account-link site-account-link--cart" href="panier.html">
         <span class="site-cart-icon-wrap">
@@ -118,6 +118,9 @@
       </button>
       <button id="posterSideAddToCart" class="poster-add-to-cart poster-side-add-to-cart" type="button">
         Ajouter au panier
+      </button>
+      <button id="posterSideSaveCreation" class="poster-save-creation poster-side-save-creation" type="button">
+        Sauvegarder dans mon compte
       </button>
       <p id="posterSideCartFeedback" class="poster-cart-feedback poster-side-cart-feedback" aria-live="polite"></p>
     </div>
@@ -290,6 +293,11 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/auth/config.js"></script>
+<script src="js/auth/mpp-auth.js"></script>
+<script src="js/auth/creations.js"></script>
+<script src="js/auth/save-creation.js"></script>
 <script src="js/common.js"></script>
 <script src="js/data/quizData.js"></script>
 <script src="js/data/filmsDB.js"></script>
