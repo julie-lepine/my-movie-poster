@@ -10,23 +10,22 @@ function getGallerySelectionGridCols(count) {
 }
 
 function getGallerySelectionGap(cols) {
-  if (cols <= 2) return 18;
-  if (cols <= 4) return 14;
-  if (cols <= 6) return 11;
-  if (cols <= 8) return 9;
-  return 7;
+  if (cols <= 2) return 12;
+  if (cols <= 4) return 9;
+  if (cols <= 6) return 7;
+  if (cols <= 8) return 5;
+  return 4;
 }
 
-/** Espacement vertical entre lignes de films (plus de lignes → un peu plus d’air). */
+/** Espacement vertical entre lignes de films (resserré pour agrandir les vignettes). */
 function getGallerySelectionRowGap(cols, rows) {
   const colGap = getGallerySelectionGap(cols);
   const safeRows = Math.max(1, Number(rows) || 1);
-  if (safeRows <= 1) return Math.round(colGap * 1.15);
   if (safeRows <= 2) return colGap;
-  if (safeRows <= 4) return colGap + 2;
-  if (safeRows <= 6) return colGap + 3;
-  if (safeRows <= 8) return colGap + 4;
-  return colGap + 5;
+  if (safeRows <= 4) return colGap + 1;
+  if (safeRows <= 6) return colGap + 1;
+  if (safeRows <= 8) return colGap + 2;
+  return colGap + 2;
 }
 
 function withGallerySelectionGaps(layout) {
@@ -92,7 +91,7 @@ function resolveGallerySelectionLayout(filmCount, item) {
         rows,
         layoutCount: 25,
         layoutKey: getGallerySelectionLayoutKey(cols, rows),
-        gap: 18,
+        gap: getGallerySelectionGap(cols),
         useThumbnails: false,
       });
     }
@@ -104,7 +103,7 @@ function resolveGallerySelectionLayout(filmCount, item) {
         rows,
         layoutCount: 48,
         layoutKey: getGallerySelectionLayoutKey(cols, rows),
-        gap: 14,
+        gap: getGallerySelectionGap(cols),
         useThumbnails: false,
       });
     }
@@ -115,7 +114,7 @@ function resolveGallerySelectionLayout(filmCount, item) {
       rows,
       layoutCount: 100,
       layoutKey: getGallerySelectionLayoutKey(cols, rows),
-      gap: 7,
+      gap: getGallerySelectionGap(cols),
       useThumbnails: true,
     });
   }
@@ -203,28 +202,110 @@ function resolveGalleryUnifiedTitleSize(grid, titles) {
   return { unifiedPx: low, metrics };
 }
 
+function readPosterFilmRowGap(cell) {
+  if (!cell) return 0;
+  const style = getComputedStyle(cell);
+  const rowGap = parseFloat(style.rowGap);
+  if (Number.isFinite(rowGap) && rowGap > 0) return rowGap;
+  const gap = parseFloat(style.gap);
+  return Number.isFinite(gap) ? gap : 0;
+}
+
+function measurePosterFilmInfoHeight(filmInfo) {
+  if (!filmInfo) return 0;
+  const prevMin = filmInfo.style.minHeight;
+  filmInfo.style.minHeight = "0";
+  const h = filmInfo.getBoundingClientRect().height;
+  if (prevMin) filmInfo.style.minHeight = prevMin;
+  else filmInfo.style.removeProperty("min-height");
+  return h;
+}
+
+/** Hauteur de la ligne image (1fr) dans .poster-film — espace au-dessus du bloc texte. */
+function measurePosterFilmImageRowHeight(cell, filmInfo, innerGap = 0) {
+  if (!cell) return 0;
+
+  const cellRect = cell.getBoundingClientRect();
+  if (filmInfo && cellRect.height > 0) {
+    const infoRect = filmInfo.getBoundingClientRect();
+    const fromLayout = infoRect.top - cellRect.top - innerGap;
+    if (fromLayout > 1) return fromLayout;
+  }
+
+  const cellH = cell.clientHeight;
+  if (!filmInfo || cellH < 1) return cellH;
+
+  const infoH = measurePosterFilmInfoHeight(filmInfo);
+  return Math.max(0, cellH - infoH - innerGap);
+}
+
 function syncGallerySelectionThumbSquares(grid) {
   if (!grid) return;
+
+  const gridRect = grid.getBoundingClientRect();
+  const gridStyle = getComputedStyle(grid);
+  const colCount = Math.max(
+    1,
+    Number(grid.dataset.cols) ||
+      parseInt(gridStyle.getPropertyValue("--poster-cols"), 10) ||
+      1
+  );
+  const rowCount = Math.max(
+    1,
+    Number(grid.dataset.rows) ||
+      parseInt(gridStyle.getPropertyValue("--poster-rows"), 10) ||
+      1
+  );
+  const rowGap = parseFloat(gridStyle.rowGap) || parseFloat(gridStyle.gap) || 0;
+  const estimatedRowH =
+    gridRect.height > 0 ? Math.max(0, (gridRect.height - rowGap * (rowCount - 1)) / rowCount) : 0;
 
   grid.querySelectorAll(".poster-film").forEach((cell) => {
     const thumb = cell.querySelector(".poster-film__thumb");
     if (!thumb) return;
 
     const cellW = cell.clientWidth;
-    const side = Math.floor(Math.max(0, cellW));
+    const filmInfo = cell.querySelector(".film-info");
+    const innerGap = readPosterFilmRowGap(cell);
+    let imageRowH = measurePosterFilmImageRowHeight(cell, filmInfo, innerGap);
 
-    const squareKey = `${cellW}`;
-    if (side < 2) {
+    if (imageRowH < 2 && estimatedRowH > 2) {
+      const filmInfoH =
+        filmInfo && estimatedRowH > 0 ? measurePosterFilmInfoHeight(filmInfo) : 0;
+      imageRowH = Math.max(0, estimatedRowH - filmInfoH - innerGap);
+    }
+
+    const squareKey = `${cellW}x${Math.round(imageRowH)}x${colCount}`;
+
+    if (cellW < 2 || imageRowH < 2) {
       thumb.style.removeProperty("width");
       thumb.style.removeProperty("height");
+      thumb.style.removeProperty("max-width");
+      thumb.style.removeProperty("max-height");
       delete thumb.dataset.squareKey;
       return;
     }
+
     if (thumb.dataset.squareKey === squareKey) return;
 
+    const side = Math.floor(Math.max(0, Math.min(cellW, imageRowH)));
+    if (side < 2) {
+      thumb.style.removeProperty("width");
+      thumb.style.removeProperty("height");
+      thumb.style.removeProperty("max-width");
+      thumb.style.removeProperty("max-height");
+      thumb.style.removeProperty("aspect-ratio");
+      delete thumb.dataset.squareKey;
+      return;
+    }
+
     thumb.dataset.squareKey = squareKey;
-    thumb.style.width = `${side}px`;
-    thumb.style.height = `${side}px`;
+    const sideValue = `${side}px`;
+    thumb.style.width = sideValue;
+    thumb.style.height = sideValue;
+    thumb.style.maxWidth = sideValue;
+    thumb.style.maxHeight = sideValue;
+    thumb.style.aspectRatio = "1 / 1";
   });
 }
 
@@ -281,6 +362,7 @@ function syncGallerySelectionTitleMetrics(grid) {
 
   syncGalleryUniformTitleBlockHeight(grid);
   syncGalleryFilmTextReserve(grid);
+  syncGallerySelectionThumbSquares(grid);
 }
 
 window.getGallerySelectionLayout = getGallerySelectionLayout;

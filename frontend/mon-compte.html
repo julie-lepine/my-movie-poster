@@ -119,6 +119,16 @@
         </section>
 
         <section class="account-panel" data-account-panel="creations" hidden aria-label="Mes créations">
+          <div class="account-creations-toolbar">
+            <button
+              id="accountCreationsDeleteAll"
+              class="account-creation-btn account-creation-btn--danger account-creations-delete-all"
+              type="button"
+              hidden
+            >
+              Tout supprimer
+            </button>
+          </div>
           <p id="accountCreationsEmpty" class="account-creations-empty" hidden>
             Tu n'as pas encore de création sauvegardée. Utilise « Sauvegarder dans mon compte » sur Mon Poster ou la Vitrine.
           </p>
@@ -128,6 +138,40 @@
       </div>
     </div>
   </section>
+
+  <div
+    id="accountDeleteCreationModal"
+    class="account-confirm-modal"
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="accountDeleteCreationTitle"
+  >
+    <div class="account-confirm-card">
+      <h2 id="accountDeleteCreationTitle">Supprimer cette création ?</h2>
+      <p id="accountDeleteCreationMessage" class="account-confirm-message"></p>
+      <div class="account-confirm-actions">
+        <button id="accountDeleteCreationCancel" class="account-creation-btn" type="button">
+          Annuler
+        </button>
+        <button
+          id="accountDeleteCreationConfirm"
+          class="account-creation-btn account-creation-btn--danger"
+          type="button"
+        >
+          Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="cartPreviewModal" class="cart-preview-modal" hidden role="dialog" aria-modal="true" aria-labelledby="cartPreviewTitle">
+    <div class="cart-preview-card">
+      <button id="cartPreviewClose" class="gallery-customize-close cart-preview-close" type="button" aria-label="Fermer l'aperçu">×</button>
+      <h2 id="cartPreviewTitle">Aperçu du poster</h2>
+      <div id="cartPreviewContent" class="cart-preview-content"></div>
+    </div>
+  </div>
 </main>
 
 <footer class="site-footer">
@@ -147,6 +191,7 @@
 <script src="js/auth/password-toggle.js"></script>
 <script src="js/common.js"></script>
 <script src="js/core/gallery-selection-layout.js"></script>
+<script src="js/poster/poster-preview-host.js"></script>
 <script src="js/pages/cart.js"></script>
 <script src="js/auth/account.js"></script>
 </body>

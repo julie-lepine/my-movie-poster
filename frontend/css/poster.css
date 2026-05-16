@@ -1777,11 +1777,12 @@ QUIZ
   max-width: 100%;
   aspect-ratio: 1 / 1;
   justify-self: center;
-  align-self: start;
+  align-self: end;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .gallery-selection-poster.poster-sheet .poster-film__thumb > img {

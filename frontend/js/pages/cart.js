@@ -590,6 +590,10 @@ function createCartSelectionPosterPreview(item, previewOptions = {}) {
   grid.style.setProperty("--poster-rows", String(layout.rows));
   grid.style.setProperty("--poster-gap", `${layout.gap}px`);
   grid.style.setProperty("--poster-row-gap", `${layout.rowGap}px`);
+  poster.style.setProperty("--poster-cols", String(layout.cols));
+  poster.style.setProperty("--poster-rows", String(layout.rows));
+  poster.style.setProperty("--poster-gap", `${layout.gap}px`);
+  poster.style.setProperty("--poster-row-gap", `${layout.rowGap}px`);
 
   if (films.length) {
     films.forEach((film) => {
@@ -737,15 +741,33 @@ function syncCartQuizPosterMetrics(poster) {
   syncCartQuizPosterBandHeight(poster);
 }
 
-/** Modal vitrine : fit titres seulement (inchangé). */
+/** Vitrine panier : même moteur que la vitrine (carrés, titres unifiés, réserve texte). */
 function syncCartGalleryPosterMetrics(poster) {
   const grid = poster?.querySelector(".poster-grid");
   if (!grid || typeof syncGallerySelectionTitleMetrics !== "function") return;
   syncGallerySelectionTitleMetrics(grid);
 }
 
-/** Vignette panier : titres + cellules comme Mon Poster, après gabarit 340px. */
+function scheduleCartGalleryPosterMetrics(poster) {
+  const filmCount = poster?.querySelectorAll(".poster-film").length || 0;
+  const run = () => {
+    if (poster?.isConnected) syncCartGalleryPosterMetrics(poster);
+  };
+
+  run();
+  requestAnimationFrame(run);
+  if (filmCount > 24) {
+    requestAnimationFrame(() => requestAnimationFrame(run));
+    window.setTimeout(run, 80);
+  }
+}
+
+/** Vignette panier : vitrine → gallery metrics ; quiz → Mon Poster. */
 function syncCartThumbPosterMetrics(poster) {
+  if (isCartGalleryStylePoster(poster)) {
+    scheduleCartGalleryPosterMetrics(poster);
+    return;
+  }
   poster.querySelectorAll(".film-title").forEach((titleEl) => {
     delete titleEl.dataset.fitKey;
   });
@@ -756,9 +778,10 @@ function prepareCartGalleryPosterForMeasure(poster) {
   poster.style.width = `${CART_GALLERY_PREVIEW_W}px`;
   poster.style.maxWidth = `${CART_GALLERY_PREVIEW_W}px`;
   poster.style.minWidth = "0";
-  poster.style.height = "auto";
-  poster.style.minHeight = "0";
-  poster.style.maxHeight = "none";
+  poster.style.height = `${CART_GALLERY_PREVIEW_H}px`;
+  poster.style.minHeight = `${CART_GALLERY_PREVIEW_H}px`;
+  poster.style.maxHeight = `${CART_GALLERY_PREVIEW_H}px`;
+  poster.style.aspectRatio = "420 / 594";
 }
 
 function prepareCartSquarePosterForMeasure(poster) {
@@ -847,6 +870,77 @@ function isCartGalleryStylePoster(poster) {
   return poster?.classList.contains("gallery-selection-poster");
 }
 
+function getCartPreviewSizingHost(frame) {
+  return (
+    frame?.closest?.(".cart-preview-content") ||
+    frame?.closest?.(".cart-preview-watermark-frame") ||
+    frame?.parentElement
+  );
+}
+
+function readCartPreviewAvailableSize(sizingHost, previewPad = 28) {
+  const hostRect = sizingHost?.getBoundingClientRect?.() || { width: 0, height: 0 };
+  const card = sizingHost?.closest?.(".cart-preview-card");
+  const cardRect = card?.getBoundingClientRect?.();
+  const fallbackW = Math.floor(cardRect?.width) || sizingHost?.clientWidth || 520;
+  const fallbackH = Math.floor(cardRect?.height) || sizingHost?.clientHeight || 680;
+  const width = Math.max(
+    1,
+    (Math.floor(hostRect.width) > 0 ? Math.floor(hostRect.width) : fallbackW) - previewPad * 2
+  );
+  const height = Math.max(
+    1,
+    (Math.floor(hostRect.height) > 0 ? Math.floor(hostRect.height) : fallbackH) - previewPad * 2
+  );
+  return { width, height };
+}
+
+function applyCartGalleryPosterDisplaySize(poster, width, height) {
+  poster.style.removeProperty("transform");
+  poster.style.transformOrigin = "center center";
+  const w = `${Math.max(1, Math.round(width))}px`;
+  const h = `${Math.max(1, Math.round(height))}px`;
+  poster.style.setProperty("width", w, "important");
+  poster.style.setProperty("max-width", w, "important");
+  poster.style.setProperty("min-width", "0", "important");
+  poster.style.setProperty("height", h, "important");
+  poster.style.setProperty("min-height", h, "important");
+  poster.style.setProperty("max-height", h, "important");
+  poster.style.aspectRatio = "420 / 594";
+}
+
+/** Modal vitrine : layout à la taille affichée (pas transform sur 340px). */
+function sizeCartLiveGalleryPosterFrame(frame, poster, sizingHost, previewPad = 28) {
+  const baseWidth = CART_GALLERY_PREVIEW_W;
+  const baseHeight = CART_GALLERY_PREVIEW_H;
+  const { width: availableWidth, height: availableHeight } = readCartPreviewAvailableSize(
+    sizingHost,
+    previewPad
+  );
+  const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
+  if (!Number.isFinite(scale) || scale <= 0) return;
+
+  const displayW = Math.max(1, Math.ceil(baseWidth * scale));
+  const displayH = Math.max(1, Math.ceil(baseHeight * scale));
+
+  prepareCartGalleryPosterForMeasure(poster);
+  void poster.offsetWidth;
+  scheduleCartGalleryPosterMetrics(poster);
+
+  frame.style.removeProperty("transform");
+  frame.style.width = `${displayW}px`;
+  frame.style.height = `${displayH}px`;
+  frame.style.maxWidth = "100%";
+  frame.style.maxHeight = "100%";
+  frame.style.margin = "0 auto";
+  frame.style.flex = "0 0 auto";
+  frame.style.alignSelf = "center";
+
+  applyCartGalleryPosterDisplaySize(poster, displayW, displayH);
+  void poster.offsetWidth;
+  scheduleCartGalleryPosterMetrics(poster);
+}
+
 /** Modal vitrine — gabarit 340px ; scale jusqu’à remplir la zone (pas plafonné à 1). */
 function sizeCartLivePosterFrame(frame) {
   const poster = frame.firstElementChild;
@@ -888,34 +982,7 @@ function sizeCartLivePosterFrame(frame) {
   const isSelection = frame.dataset.cartPosterType === "selection-poster";
   if (!isSelection) return;
 
-  const sizingHost = host.closest?.(".cart-preview-content") || host;
-  const hostRect = sizingHost.getBoundingClientRect();
-  const previewPad = 28;
-
-  prepareCartGalleryPosterForMeasure(poster);
-  void poster.offsetWidth;
-  syncCartGalleryPosterMetrics(poster);
-
-  const baseWidth = CART_GALLERY_PREVIEW_W;
-  const baseHeight = CART_GALLERY_PREVIEW_H;
-  const availableWidth = Math.max(
-    1,
-    (Math.floor(hostRect.width) || sizingHost.clientWidth || 520) - previewPad * 2
-  );
-  const availableHeight = Math.max(
-    1,
-    (Math.floor(hostRect.height) || sizingHost.clientHeight || availableWidth) -
-      previewPad * 2
-  );
-  const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
-  if (!Number.isFinite(scale) || scale <= 0) return;
-
-  frame.style.width = "100%";
-  frame.style.height = "100%";
-  frame.style.maxWidth = "100%";
-  frame.style.maxHeight = "100%";
-  poster.style.transformOrigin = "center center";
-  poster.style.transform = `scale(${scale})`;
+  sizeCartLiveGalleryPosterFrame(frame, poster, getCartPreviewSizingHost(frame));
 }
 
 function teardownCartModalPreview(content) {
@@ -1294,6 +1361,8 @@ document.addEventListener("keydown", (event) => {
 
 window.MppCartPreview = {
   createPosterPreview: createCartPosterPreview,
+  openCartPreview,
+  closeCartPreview,
   mountThumbnailPipeline: scheduleCartThumbPipelineStart,
   protectImagesIn: protectCartImagesIn,
   teardownThumbnailPipeline: teardownCartThumbObservers,

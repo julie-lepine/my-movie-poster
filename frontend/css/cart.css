@@ -112,13 +112,18 @@ CART
   overflow: hidden;
 }
 
-.cart-live-poster-frame > .poster-sheet,
-.cart-live-poster-frame > .gallery-selection-poster {
+.cart-live-poster-frame > .poster-sheet {
   margin: 0;
   transform-origin: center top;
   pointer-events: none;
   width: 100%;
   max-width: 100%;
+}
+
+.cart-live-poster-frame > .gallery-selection-poster {
+  margin: 0;
+  transform-origin: center center;
+  pointer-events: none;
 }
 
 .cart-live-poster-frame > .poster-sheet {
@@ -442,13 +447,14 @@ CART
   width: 340px !important;
   min-width: 0 !important;
   max-width: 340px !important;
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
+  height: 481px !important;
+  min-height: 481px !important;
+  max-height: 481px !important;
   aspect-ratio: 420 / 594;
   box-sizing: border-box;
   transform-origin: center center;
   overflow: hidden;
+  align-content: stretch !important;
 }
 
 .cart-thumb-poster-frame.cart-thumb-poster-frame--square > .mpp-square-frame-poster.cart-square-frame-poster {
@@ -473,118 +479,23 @@ CART
   min-height: 0;
 }
 
-/* Vignette vitrine : tokens Mon Poster (fit JS) au lieu des cqi globaux .gallery-selection-poster. */
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid {
-  width: 86%;
-  height: 100%;
-  max-height: 100%;
-  align-self: center;
-  justify-self: center;
-  align-content: start;
-  justify-items: stretch;
-  grid-template-columns: repeat(var(--poster-cols, 4), minmax(0, 1fr));
-  grid-auto-rows: auto;
+/* Vignette / modal vitrine panier : layout via .gallery-selection-poster + syncGallerySelectionTitleMetrics. */
+.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid,
+.cart-preview-content .cart-live-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid {
+  align-content: stretch !important;
+  align-items: stretch !important;
+  grid-template-rows: repeat(var(--poster-rows, 1), minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(0, 1fr) !important;
+  height: 100% !important;
+  min-height: 0 !important;
 }
 
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-film {
-  display: grid;
-  grid-template-rows: auto auto;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  justify-self: stretch;
-  justify-items: center;
-  align-content: start;
-  min-height: 0;
-  height: auto;
-  overflow: hidden;
-  container-type: inline-size;
-}
-
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-film__thumb {
-  width: min(100%, 100cqw);
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: 1 / 1;
-  justify-self: center;
-  align-self: center;
-  overflow: hidden;
-}
-
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-film__thumb > img {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  object-fit: cover;
-  object-position: center;
-}
-
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-film .film-info {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-film .film-title {
-  --film-title-line-height: 1.05;
-  --film-title-max-size: clamp(5.5px, calc(88px / var(--poster-cols, 4)), 16px);
-  --film-title-min-size: clamp(2px, calc(22px / var(--poster-cols, 4)), 6px);
-  --film-title-fit-size: var(--film-title-max-size);
-  --film-title-max-height: calc(
-    var(--film-title-fit-size, var(--film-title-max-size)) * var(--film-title-line-height)
-  );
-  box-sizing: border-box;
-  display: block;
-  font-size: var(--film-title-fit-size, var(--film-title-max-size)) !important;
-  max-height: var(--film-title-max-height) !important;
-  line-height: var(--film-title-line-height);
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-film .film-year {
-  width: 100%;
-  text-align: center;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-film .film-circle {
-  width: clamp(8px, calc(110px / var(--poster-cols, 4)), 22px);
-  height: clamp(8px, calc(110px / var(--poster-cols, 4)), 22px);
-}
-
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-film .film-year {
-  font-size: clamp(4.5px, calc(40px / var(--poster-cols, 4)), 10px);
-}
-
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid[data-cols="8"],
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid[data-cols="9"],
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid[data-cols="10"] {
-  grid-template-rows: repeat(var(--poster-rows, 10), auto);
-}
-
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid[data-cols="8"] .poster-film,
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid[data-cols="9"] .poster-film,
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid[data-cols="10"] .poster-film {
-  grid-template-rows: minmax(0, 1fr) auto;
-  height: 100%;
-  min-height: 0;
-}
-
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid[data-cols="8"] .poster-film > img,
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid[data-cols="9"] .poster-film > img,
-.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-grid[data-cols="10"] .poster-film > img {
-  max-height: 100%;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
+.cart-thumb-poster-frame > .gallery-selection-poster.poster-sheet .poster-film,
+.cart-preview-content .cart-live-poster-frame > .gallery-selection-poster.poster-sheet .poster-film {
+  height: 100% !important;
+  min-height: 0 !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+  align-content: stretch !important;
 }
 
 .cart-item-details {
@@ -713,27 +624,42 @@ CART
 }
 
 .cart-preview-watermark-frame > .cart-live-poster-frame {
-  flex: 1 1 auto;
-  align-self: stretch;
-  width: 100%;
-  height: 100%;
+  flex: 0 1 auto;
+  align-self: center;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   min-height: 0;
+  min-width: 0;
 }
 
-/* Modal : le frame remplit le watermark ; le poster est centré et scalé en JS. */
+/* Modal vitrine : frame = taille du poster (JS), centré dans la zone. */
 .cart-preview-content .cart-live-poster-frame {
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 0 1 auto;
+  align-self: center;
 }
 
 .cart-preview-content .cart-live-poster-frame > .gallery-selection-poster.poster-sheet {
-  width: 340px !important;
-  max-width: min(100%, 340px) !important;
+  max-width: 100% !important;
   min-width: 0 !important;
-  height: auto !important;
-  transform-origin: center center;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  aspect-ratio: 420 / 594;
+  box-sizing: border-box;
+  align-content: stretch !important;
+  display: grid !important;
+  overflow: hidden;
 }
 
 .cart-preview-content .cart-live-poster-frame > .mpp-square-frame-poster {

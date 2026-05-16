@@ -83,6 +83,15 @@
     if (error) throw error;
   }
 
+  async function removeAll() {
+    const user = await window.MppAuth.getUser();
+    if (!user) throw new Error("Non connecté.");
+
+    const sb = await window.MppAuth.ensureClient();
+    const { error } = await sb.from("creations").delete().eq("user_id", user.id);
+    if (error) throw error;
+  }
+
   function addPayloadToCart(payload) {
     const item = normalizePayload(payload);
     const existing = JSON.parse(localStorage.getItem("mppCart") || "[]");
@@ -104,6 +113,7 @@
     save,
     list,
     remove,
+    removeAll,
     addPayloadToCart,
     getThumbSrc,
   };

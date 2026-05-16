@@ -6,9 +6,61 @@
   const creationsList = document.getElementById("accountCreationsList");
   const creationsEmpty = document.getElementById("accountCreationsEmpty");
   const creationsFeedback = document.getElementById("accountCreationsFeedback");
+  const creationsDeleteAllBtn = document.getElementById("accountCreationsDeleteAll");
+  const deleteCreationModal = document.getElementById("accountDeleteCreationModal");
+  const deleteCreationTitle = document.getElementById("accountDeleteCreationTitle");
+  const deleteCreationMessage = document.getElementById("accountDeleteCreationMessage");
+  const deleteCreationCancel = document.getElementById("accountDeleteCreationCancel");
+  const deleteCreationConfirm = document.getElementById("accountDeleteCreationConfirm");
   const logoutBtn = document.getElementById("accountLogout");
   const tabButtons = document.querySelectorAll("[data-account-tab]");
   const tabPanels = document.querySelectorAll("[data-account-panel]");
+
+  let deleteCreationConfirmResolve = null;
+  let deleteCreationLastFocus = null;
+
+  function closeDeleteCreationModal(confirmed) {
+    if (!deleteCreationModal) return;
+    deleteCreationModal.hidden = true;
+    if (deleteCreationConfirm) deleteCreationConfirm.disabled = false;
+    if (deleteCreationCancel) deleteCreationCancel.disabled = false;
+    if (deleteCreationConfirmResolve) {
+      deleteCreationConfirmResolve(Boolean(confirmed));
+      deleteCreationConfirmResolve = null;
+    }
+    deleteCreationLastFocus?.focus?.();
+    deleteCreationLastFocus = null;
+  }
+
+  function openDeleteCreationModal({ title, message }) {
+    if (!deleteCreationModal) return Promise.resolve(false);
+
+    if (deleteCreationTitle && title) deleteCreationTitle.textContent = title;
+    if (deleteCreationMessage) {
+      deleteCreationMessage.textContent = message || "";
+      deleteCreationMessage.hidden = !message;
+    }
+
+    deleteCreationLastFocus = document.activeElement;
+    deleteCreationModal.hidden = false;
+    deleteCreationCancel?.focus();
+
+    return new Promise((resolve) => {
+      deleteCreationConfirmResolve = resolve;
+    });
+  }
+
+  deleteCreationCancel?.addEventListener("click", () => closeDeleteCreationModal(false));
+  deleteCreationConfirm?.addEventListener("click", () => closeDeleteCreationModal(true));
+
+  deleteCreationModal?.addEventListener("click", (event) => {
+    if (event.target === deleteCreationModal) closeDeleteCreationModal(false);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || deleteCreationModal?.hidden) return;
+    closeDeleteCreationModal(false);
+  });
 
   function setFeedback(el, message, isError) {
     if (!el) return;
@@ -144,13 +196,29 @@
     const actions = document.createElement("div");
     actions.className = "account-creation-actions";
 
+    const cardFeedback = document.createElement("p");
+    cardFeedback.className = "account-creation-card-feedback auth-feedback";
+    cardFeedback.setAttribute("aria-live", "polite");
+
+    const viewBtn = document.createElement("button");
+    viewBtn.type = "button";
+    viewBtn.className = "account-creation-btn account-creation-btn--view";
+    viewBtn.textContent = "Visualiser le poster";
+    viewBtn.addEventListener("click", () => {
+      window.MppCartPreview?.openCartPreview?.(item);
+    });
+
     const cartBtn = document.createElement("button");
     cartBtn.type = "button";
     cartBtn.className = "account-creation-btn account-creation-btn--accent";
     cartBtn.textContent = "Ajouter au panier";
     cartBtn.addEventListener("click", () => {
-      window.MppCreations.addPayloadToCart(item);
-      setFeedback(creationsFeedback, "Ajouté au panier.");
+      try {
+        window.MppCreations.addPayloadToCart(item);
+        setFeedback(cardFeedback, "Poster ajouté au panier.");
+      } catch (error) {
+        setFeedback(cardFeedback, error.message || "Impossible d'ajouter au panier.", true);
+      }
     });
 
     const deleteBtn = document.createElement("button");
@@ -158,23 +226,38 @@
     deleteBtn.className = "account-creation-btn account-creation-btn--danger";
     deleteBtn.textContent = "Supprimer";
     deleteBtn.addEventListener("click", async () => {
-      if (!window.confirm("Supprimer cette création ?")) return;
+      const creationLabel = title.textContent || "cette création";
+      const confirmed = await openDeleteCreationModal({
+        title: "Supprimer cette création ?",
+        message: `« ${creationLabel} » sera définitivement supprimée.`,
+      });
+      if (!confirmed) return;
+
+      deleteBtn.disabled = true;
+
       try {
         await window.MppCreations.remove(creation.id);
         card.remove();
-        if (!creationsList?.childElementCount && creationsEmpty) {
-          creationsEmpty.hidden = false;
+        if (!creationsList?.childElementCount) {
+          if (creationsEmpty) creationsEmpty.hidden = false;
+          syncCreationsToolbar(false);
         }
         setFeedback(creationsFeedback, "Création supprimée.");
       } catch (error) {
         setFeedback(creationsFeedback, error.message || "Erreur.", true);
+      } finally {
+        deleteBtn.disabled = false;
       }
     });
 
-    actions.append(cartBtn, deleteBtn);
-    body.append(title, subtitle, meta, actions);
+    actions.append(viewBtn, cartBtn, deleteBtn);
+    body.append(title, subtitle, meta, actions, cardFeedback);
     card.append(preview, body);
     return card;
+  }
+
+  function syncCreationsToolbar(hasItems) {
+    if (creationsDeleteAllBtn) creationsDeleteAllBtn.hidden = !hasItems;
   }
 
   async function loadCreations() {
@@ -185,7 +268,9 @@
       window.MppCartPreview?.teardownThumbnailPipeline?.();
       const items = await window.MppCreations.list();
       creationsList.replaceChildren();
-      if (creationsEmpty) creationsEmpty.hidden = items.length > 0;
+      const hasItems = items.length > 0;
+      if (creationsEmpty) creationsEmpty.hidden = hasItems;
+      syncCreationsToolbar(hasItems);
 
       items.forEach((creation) => {
         creationsList.appendChild(renderCreationCard(creation));
@@ -194,9 +279,37 @@
       window.MppCartPreview?.protectImagesIn?.(creationsList);
       window.MppCartPreview?.mountThumbnailPipeline?.(creationsList);
     } catch (error) {
+      syncCreationsToolbar(false);
       setFeedback(creationsFeedback, error.message || "Impossible de charger les créations.", true);
     }
   }
+
+  creationsDeleteAllBtn?.addEventListener("click", async () => {
+    if (!window.MppCreations?.removeAll) return;
+
+    const confirmed = await openDeleteCreationModal({
+      title: "Supprimer toutes tes créations ?",
+      message:
+        "Cette action est irréversible. Toutes tes créations sauvegardées seront définitivement supprimées.",
+    });
+    if (!confirmed) return;
+
+    creationsDeleteAllBtn.disabled = true;
+    setFeedback(creationsFeedback, "Suppression...");
+
+    try {
+      window.MppCartPreview?.teardownThumbnailPipeline?.();
+      await window.MppCreations.removeAll();
+      creationsList?.replaceChildren();
+      if (creationsEmpty) creationsEmpty.hidden = false;
+      syncCreationsToolbar(false);
+      setFeedback(creationsFeedback, "Toutes les créations ont été supprimées.");
+    } catch (error) {
+      setFeedback(creationsFeedback, error.message || "Impossible de tout supprimer.", true);
+    } finally {
+      creationsDeleteAllBtn.disabled = false;
+    }
+  });
 
   async function boot() {
     if (!window.MppAuth?.isConfigured()) return;
