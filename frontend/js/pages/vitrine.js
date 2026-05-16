@@ -348,7 +348,7 @@ function isGalleryFilmSelected(film) {
 function setupGalleryFilterOptions() {
   fillGallerySelect(
     "galleryDirectorFilter",
-    getUniqueGalleryValues((film) => [film.realisateur]).filter(
+    getUniqueGalleryValues((film) => toGalleryArray(film.realisateur)).filter(
       (value) => value !== "À compléter"
     ),
     "Réalisateur"
@@ -420,7 +420,7 @@ function readGalleryFilters() {
 
 function filmMatchesGalleryFilters(film, filters) {
   if (filters.color && !toGalleryArray(film.couleurs).includes(filters.color)) return false;
-  if (filters.director && film.realisateur !== filters.director) return false;
+  if (filters.director && !toGalleryArray(film.realisateur).includes(filters.director)) return false;
   if (filters.genre && !(film.genre || []).includes(filters.genre)) return false;
   if (filters.year && String(film.year) !== filters.year) return false;
   if (filters.search && !normalizeGalleryText(film.titre).includes(filters.search)) {
