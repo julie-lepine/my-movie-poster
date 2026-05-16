@@ -3320,6 +3320,8 @@ body > main,
 
 /* Vitrine : aperçu à l'échelle, mais même structure produit que Mon Poster. */
 .gallery-selection-poster.poster-sheet {
+  --gallery-poster-header-ratio: 12%;
+  --gallery-poster-footer-ratio: 8%;
   container-type: inline-size;
   width: min(100%, 340px);
   min-width: 0;
@@ -3328,8 +3330,9 @@ body > main,
   min-height: 0;
   max-height: none;
   aspect-ratio: 420 / 594;
-  grid-template-rows: 10% minmax(0, 1fr) 10%;
-  row-gap: 0;
+  grid-template-rows: var(--gallery-poster-header-ratio) minmax(0, 1fr)
+    var(--gallery-poster-footer-ratio);
+  row-gap: clamp(2px, 0.45cqi, 5px);
   padding: clamp(6px, 1.6cqi, 11px) clamp(8px, 2.2cqi, 14px) clamp(6px, 1.5cqi, 10px);
   align-content: stretch;
   overflow: hidden;
@@ -3344,7 +3347,10 @@ body > main,
   display: grid;
   place-content: center;
   justify-items: center;
+  align-content: center;
   gap: clamp(1px, 0.35cqi, 3px);
+  padding-bottom: clamp(1px, 0.25cqi, 3px);
+  box-sizing: border-box;
   overflow: hidden;
 }
 
