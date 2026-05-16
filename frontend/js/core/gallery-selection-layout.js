@@ -243,6 +243,22 @@ function syncGalleryUniformTitleBlockHeight(grid) {
   }
 }
 
+/** Réserve la hauteur du bloc titre + année + cercle pour ne pas le couper sous l’image. */
+function syncGalleryFilmTextReserve(grid) {
+  if (!grid) return;
+
+  let maxTextH = 0;
+  grid.querySelectorAll(".poster-film .film-info").forEach((infoEl) => {
+    maxTextH = Math.max(maxTextH, infoEl.scrollHeight);
+  });
+
+  if (maxTextH > 0.5) {
+    grid.style.setProperty("--gallery-film-text-reserve", `${Math.ceil(maxTextH)}px`);
+  } else {
+    grid.style.removeProperty("--gallery-film-text-reserve");
+  }
+}
+
 function syncGallerySelectionTitleMetrics(grid) {
   if (!grid) return;
 
@@ -253,6 +269,7 @@ function syncGallerySelectionTitleMetrics(grid) {
     titleEl.style.removeProperty("--film-title-max-height");
   });
   grid.style.removeProperty("--gallery-title-block-height");
+  grid.style.removeProperty("--gallery-film-text-reserve");
   grid.style.removeProperty("--gallery-unified-title-size");
 
   syncGallerySelectionThumbSquares(grid);
@@ -263,10 +280,12 @@ function syncGallerySelectionTitleMetrics(grid) {
   }
 
   syncGalleryUniformTitleBlockHeight(grid);
+  syncGalleryFilmTextReserve(grid);
 }
 
 window.getGallerySelectionLayout = getGallerySelectionLayout;
 window.resolveGallerySelectionLayout = resolveGallerySelectionLayout;
 window.syncGallerySelectionThumbSquares = syncGallerySelectionThumbSquares;
 window.syncGalleryUniformTitleBlockHeight = syncGalleryUniformTitleBlockHeight;
+window.syncGalleryFilmTextReserve = syncGalleryFilmTextReserve;
 window.syncGallerySelectionTitleMetrics = syncGallerySelectionTitleMetrics;

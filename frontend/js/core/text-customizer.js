@@ -28,6 +28,7 @@
       filmYearColor: defaults.filmYearColor || "",
       filmCircleSrc: defaults.filmCircleSrc || "",
       backgroundImage: defaults.backgroundImage || "",
+      backgroundColor: defaults.backgroundColor || "",
       titleFormat: cloneFormat(defaults.titleFormat),
       subtitleFormat: cloneFormat(defaults.subtitleFormat),
     };
@@ -55,6 +56,7 @@
       "filmYearColor",
       "filmCircleSrc",
       "backgroundImage",
+      "backgroundColor",
     ];
     const changed = keys.filter((key) => previous[key] !== next[key]);
 
@@ -125,6 +127,15 @@
     }
   }
 
+  function setBackgroundColor(el, color) {
+    if (!el) return;
+    if (color) {
+      el.style.backgroundColor = color;
+    } else {
+      el.style.removeProperty("background-color");
+    }
+  }
+
   function createTextCustomizer(config) {
     const defaults = config.defaults || {};
     const controls = config.controls || {};
@@ -171,6 +182,7 @@
       writeControl(controls.filmYearColorInput, state.filmYearColor);
       writeControl(controls.filmCircleSelect, state.filmCircleSrc);
       writeControl(controls.backgroundSelect, state.backgroundImage);
+      writeControl(controls.backgroundColorInput, state.backgroundColor);
       const backgroundUpload = resolveElement(controls.backgroundUpload);
       if (backgroundUpload) backgroundUpload.value = "";
       syncLabels();
@@ -195,6 +207,10 @@
         0;
       const backgroundSelect = resolveElement(controls.backgroundSelect);
       if (backgroundSelect) state.backgroundImage = backgroundSelect.value;
+      state.backgroundColor = readControl(
+        controls.backgroundColorInput,
+        state.backgroundColor
+      );
       syncLabels();
     }
 
@@ -252,7 +268,12 @@
         if (subtitle) setInlineTextStyle(subtitle, state, "subtitle", targets);
       }
 
-      setBackgroundImage(background, state.backgroundImage);
+      if (shouldApplyAll || changed.has("backgroundColor")) {
+        setBackgroundColor(background, state.backgroundColor);
+      }
+      if (shouldApplyAll || changed.has("backgroundImage")) {
+        setBackgroundImage(background, state.backgroundImage);
+      }
     }
 
     function notifyChange(changedKeys) {
@@ -307,6 +328,7 @@
         controls.titleSizeInput,
         controls.subtitleSizeInput,
         controls.backgroundSelect,
+        controls.backgroundColorInput,
       ].forEach((ref) => {
         const el = resolveElement(ref);
         if (!el) return;

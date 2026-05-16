@@ -145,9 +145,11 @@
   }
 
   function drawPosterChrome(ctx, width, height, customization) {
-    ctx.fillStyle = "#f2f2f2";
+    ctx.fillStyle = customization?.backgroundColor || "#f2f2f2";
     ctx.fillRect(0, 0, width, height);
-    return loadImage(customization?.backgroundImage || DEFAULT_BACKGROUND).then((bg) => {
+    const imageUrl = customization?.backgroundImage || DEFAULT_BACKGROUND;
+    if (!imageUrl) return Promise.resolve();
+    return loadImage(imageUrl).then((bg) => {
       if (bg) drawImageCover(ctx, bg, 0, 0, width, height);
     });
   }

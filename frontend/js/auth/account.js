@@ -105,23 +105,25 @@
     }
   }
 
-  function renderCreationCard(creation) {
+  function buildCreationCartItem(creation) {
     const payload = creation.payload || {};
-    const films = Array.isArray(payload.films) ? payload.films : [];
+    return {
+      ...payload,
+      type: payload.type || creation.type || "quiz-poster",
+    };
+  }
+
+  function renderCreationCard(creation) {
+    const item = buildCreationCartItem(creation);
     const card = document.createElement("article");
-    card.className = "account-creation-card";
+    card.className = "account-creation-card cart-item";
 
     const preview = document.createElement("div");
-    preview.className = "account-creation-preview";
-    films.slice(0, 9).forEach((film) => {
-      const img = document.createElement("img");
-      img.src = window.MppCreations.getThumbSrc(film.image);
-      img.alt = "";
-      img.loading = "lazy";
-      img.decoding = "async";
-      preview.appendChild(img);
-    });
-    if (!preview.childElementCount) {
+    preview.className = "account-creation-preview cart-item-preview cart-item-preview--live";
+
+    if (window.MppCartPreview?.createPosterPreview) {
+      preview.appendChild(window.MppCartPreview.createPosterPreview(item, "thumbnail"));
+    } else {
       preview.classList.add("account-creation-preview--empty");
     }
 
@@ -147,7 +149,7 @@
     cartBtn.className = "account-creation-btn account-creation-btn--accent";
     cartBtn.textContent = "Ajouter au panier";
     cartBtn.addEventListener("click", () => {
-      window.MppCreations.addPayloadToCart(payload);
+      window.MppCreations.addPayloadToCart(item);
       setFeedback(creationsFeedback, "Ajouté au panier.");
     });
 
@@ -180,6 +182,7 @@
     setFeedback(creationsFeedback, "");
 
     try {
+      window.MppCartPreview?.teardownThumbnailPipeline?.();
       const items = await window.MppCreations.list();
       creationsList.replaceChildren();
       if (creationsEmpty) creationsEmpty.hidden = items.length > 0;
@@ -187,6 +190,9 @@
       items.forEach((creation) => {
         creationsList.appendChild(renderCreationCard(creation));
       });
+
+      window.MppCartPreview?.protectImagesIn?.(creationsList);
+      window.MppCartPreview?.mountThumbnailPipeline?.(creationsList);
     } catch (error) {
       setFeedback(creationsFeedback, error.message || "Impossible de charger les créations.", true);
     }

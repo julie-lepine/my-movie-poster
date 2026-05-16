@@ -55,6 +55,10 @@ function copyGalleryPosterCustomizationStyles(source, clone) {
     else clone.style.removeProperty(prop);
   });
 
+  const bgColor = source.style.backgroundColor;
+  if (bgColor) clone.style.backgroundColor = bgColor;
+  else clone.style.removeProperty("background-color");
+
   const bgImage = source.style.backgroundImage;
   if (bgImage && bgImage !== "none") {
     clone.style.backgroundImage = bgImage;
@@ -677,29 +681,30 @@ function createGallerySelectionItem(film, useThumbnails) {
   const info = document.createElement("div");
   info.className = "film-info";
 
-  const circle = document.createElement("img");
-  circle.className = "film-circle";
-  circle.src = galleryState.customization?.filmCircleSrc || GALLERY_CIRCLE_SRC;
-  circle.alt = "";
-  circle.decoding = "async";
-  protectImageElement(circle);
-
   const title = document.createElement("div");
   title.className = "film-title";
   title.textContent = film.titre;
   title.title = film.titre;
 
-  const year = document.createElement("div");
-  year.className = "film-year";
-  year.textContent = film.year || "";
-
-  const meta = document.createElement("div");
-  meta.className = "film-meta";
-  meta.appendChild(year);
-  meta.appendChild(circle);
-
   info.appendChild(title);
+
+  const circle = document.createElement("img");
+    circle.className = "film-circle";
+    circle.src = galleryState.customization?.filmCircleSrc || GALLERY_CIRCLE_SRC;
+    circle.alt = "";
+    circle.decoding = "async";
+    protectImageElement(circle);
+
+    const year = document.createElement("div");
+    year.className = "film-year";
+    year.textContent = film.year || "";
+
+    const meta = document.createElement("div");
+    meta.className = "film-meta";
+    meta.appendChild(year);
+    meta.appendChild(circle);
   info.appendChild(meta);
+
   item.appendChild(thumb);
   item.appendChild(info);
 
@@ -825,6 +830,7 @@ function renderGallerySelection() {
   if (poster) {
     poster.dataset.gallerySelection = "true";
     poster.dataset.posterLayout = `${layout.cols}x${layout.rows}`;
+    delete poster.dataset.hideFilmMeta;
   }
   grid.dataset.gallerySelection = "true";
   grid.removeAttribute("data-layout");
@@ -980,6 +986,7 @@ function setupGalleryCustomizer() {
       filmYearColor: "#5c606b",
       filmCircleSrc: GALLERY_CIRCLE_SRC,
       backgroundImage: "",
+      backgroundColor: "#f2f2f2",
     },
     controls: {
       titleInput: "galleryTitleInput",
@@ -996,6 +1003,7 @@ function setupGalleryCustomizer() {
       filmYearColorInput: "galleryFilmYearColorInput",
       filmCircleSelect: "galleryFilmCircleSelect",
       backgroundSelect: "galleryBackgroundSelect",
+      backgroundColorInput: "galleryBackgroundColorInput",
       backgroundUpload: "galleryBackgroundUpload",
       resetButton: "galleryResetCustomization",
       formatButtons: {

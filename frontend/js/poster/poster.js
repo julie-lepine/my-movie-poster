@@ -865,6 +865,7 @@ function bindPosterEditor() {
       filmYearColor: "#5c606b",
       filmCircleSrc: "./assets/site/circle.png",
       backgroundImage: "",
+      backgroundColor: "#f2f2f2",
     },
     controls: {
       titleInput: titleEditorInput,
@@ -881,6 +882,7 @@ function bindPosterEditor() {
       filmYearColorInput,
       filmCircleSelect,
       backgroundSelect: "posterBackgroundSelect",
+      backgroundColorInput: "posterBackgroundColorInput",
       backgroundUpload: "posterBackgroundUpload",
       resetButton: resetPosterTextBtn,
       formatButtons: {
@@ -891,6 +893,7 @@ function bindPosterEditor() {
     targets: {
       mode: "cssVars",
       root: () => document.getElementById("posterContainer"),
+      background: () => document.getElementById("posterContainer"),
       title: () => document.getElementById("posterTitle"),
       subtitle: () => document.getElementById("posterSubtitle"),
     },

@@ -247,9 +247,18 @@ function setCartTextStyle(el, customization = {}, scope) {
 }
 
 function setCartBackground(el, customization = {}) {
-  const backgroundImage = customization.backgroundImage || CART_DEFAULT_BACKGROUND;
+  const backgroundColor = customization.backgroundColor || "#f2f2f2";
+  el.style.backgroundColor = backgroundColor;
+
+  const backgroundImage =
+    customization.backgroundImage !== undefined && customization.backgroundImage !== ""
+      ? customization.backgroundImage
+      : CART_DEFAULT_BACKGROUND;
   if (!backgroundImage) {
     el.style.removeProperty("background-image");
+    el.style.removeProperty("background-repeat");
+    el.style.removeProperty("background-position");
+    el.style.removeProperty("background-size");
     return;
   }
   el.style.backgroundImage = `url("${String(backgroundImage).replace(/"/g, '\\"')}")`;
@@ -572,6 +581,7 @@ function createCartSelectionPosterPreview(item, previewOptions = {}) {
   const layout = getCartSelectionLayout(films.length, item);
   poster.dataset.gallerySelection = "true";
   poster.dataset.posterLayout = `${layout.cols}x${layout.rows}`;
+  delete poster.dataset.hideFilmMeta;
   grid.dataset.gallerySelection = "true";
   grid.removeAttribute("data-layout");
   grid.dataset.cols = String(layout.cols);
@@ -1281,5 +1291,12 @@ document.getElementById("cartPreviewModal")?.addEventListener("click", (event) =
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeCartPreview();
 });
+
+window.MppCartPreview = {
+  createPosterPreview: createCartPosterPreview,
+  mountThumbnailPipeline: scheduleCartThumbPipelineStart,
+  protectImagesIn: protectCartImagesIn,
+  teardownThumbnailPipeline: teardownCartThumbObservers,
+};
 
 renderCart();
