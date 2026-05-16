@@ -143,13 +143,18 @@ img {
   display: block;
 }
 
+body > main,
 .page-content {
-  width: min(1240px, 100%);
+  width: min(1440px, calc(100% - 200px));
   max-width: 100%;
-  margin: 0 auto;
-  padding: 16px 0 16px;
-  min-height: 64vh;
+  margin-left: auto;
+  margin-right: auto;
   box-sizing: border-box;
+}
+
+.page-content {
+  padding: 8px 0 10px;
+  min-height: 64vh;
   overflow-x: clip;
 }
 
@@ -384,8 +389,9 @@ img {
    VITRINE
 ======================= */
 .gallery-page {
-  width: min(1240px, calc(100% - 32px));
-  margin: 22px auto 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 10px auto 0;
   display: none;
   gap: 28px;
 }
@@ -4844,13 +4850,19 @@ button:hover {
     gap: 12px;
   }
 
+  body > main,
+  .page-content {
+    width: min(100%, calc(100% - 24px));
+  }
+
   .home-page {
     width: min(960px, calc(100% - 24px));
     margin-top: 8px;
   }
 
   .gallery-page {
-    width: min(1240px, calc(100% - 24px));
+    width: 100%;
+    max-width: 100%;
     margin-top: 8px;
   }
 
