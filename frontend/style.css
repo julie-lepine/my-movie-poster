@@ -589,8 +589,100 @@ img {
 
 .gallery-results {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  min-width: 0;
+  align-items: start;
+}
+
+.gallery-results:has(.gallery-selection-summary:not([hidden])) {
+  grid-template-columns: minmax(176px, 220px) minmax(0, 1fr);
+}
+
+.gallery-results-grid {
+  display: grid;
   gap: 28px;
   min-width: 0;
+  align-self: start;
+}
+
+.gallery-selection-summary {
+  --gallery-selection-summary-height: min(680px, calc(100vh - 120px));
+  position: sticky;
+  top: 18px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  height: var(--gallery-selection-summary-height);
+  max-height: var(--gallery-selection-summary-height);
+  align-self: start;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.08);
+  overflow: hidden;
+}
+
+.gallery-selection-summary[hidden] {
+  display: none !important;
+}
+
+.gallery-selection-summary__count {
+  margin: 0;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #121722;
+}
+
+.gallery-selection-summary__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 6px 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.gallery-selection-summary__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+}
+
+.gallery-selection-summary__title {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #121722;
+  overflow-wrap: anywhere;
+}
+
+.gallery-selection-summary .gallery-select-toggle {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  flex-shrink: 0;
+  z-index: 0;
+}
+
+.gallery-selection-summary .gallery-select-toggle--summary[aria-pressed="true"] {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+
+.gallery-selection-summary .gallery-select-toggle--summary[aria-pressed="true"]::after {
+  content: "✓";
+}
+
+.gallery-selection-summary .gallery-select-toggle--summary[aria-pressed="true"]:hover::after,
+.gallery-selection-summary .gallery-select-toggle--summary[aria-pressed="true"]:focus-visible::after {
+  content: "✗";
 }
 
 .gallery-grid {
@@ -4548,6 +4640,14 @@ button:hover {
 
   .gallery-layout {
     grid-template-columns: 1fr;
+  }
+
+  .gallery-results:has(.gallery-selection-summary:not([hidden])) {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-selection-summary {
+    display: none !important;
   }
 
   .gallery-selection-panel {

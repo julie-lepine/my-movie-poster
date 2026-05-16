@@ -439,11 +439,32 @@ function applyGalleryFilters() {
   syncGallerySelectFilteredButton();
 }
 
-function toggleGalleryFilmSelection(film) {
+function findGallerySelectedFilmIndex(film) {
+  const byReference = galleryState.selectedFilms.indexOf(film);
+  if (byReference >= 0) return byReference;
+
   const filmId = getGalleryFilmId(film);
-  const existingIndex = galleryState.selectedFilms.findIndex(
+  return galleryState.selectedFilms.findIndex(
     (selectedFilm) => getGalleryFilmId(selectedFilm) === filmId
   );
+}
+
+function removeGalleryFilmFromSelection(film) {
+  const existingIndex = findGallerySelectedFilmIndex(film);
+  removeGalleryFilmFromSelectionAtIndex(existingIndex);
+}
+
+function removeGalleryFilmFromSelectionAtIndex(index) {
+  if (index < 0 || index >= galleryState.selectedFilms.length) return;
+
+  galleryState.selectedFilms.splice(index, 1);
+  setGalleryCartFeedback("");
+  renderGalleryGrid();
+  renderGallerySelection();
+}
+
+function toggleGalleryFilmSelection(film) {
+  const existingIndex = findGallerySelectedFilmIndex(film);
 
   if (existingIndex >= 0) {
     galleryState.selectedFilms.splice(existingIndex, 1);
@@ -638,6 +659,94 @@ function getGallerySelectionLayout(count) {
   return { layoutCount: 100, cols: 10, gap: 7 };
 }
 
+function compareGalleryFilmsByTitle(a, b) {
+  return String(a?.titre || "").localeCompare(String(b?.titre || ""), "fr", {
+    sensitivity: "base",
+  });
+}
+
+function createGallerySummarySelectToggle(film, selectionIndex) {
+  const selectButton = document.createElement("button");
+  selectButton.type = "button";
+  selectButton.className = "gallery-select-toggle gallery-select-toggle--summary";
+  selectButton.setAttribute("aria-pressed", "true");
+  selectButton.dataset.galleryFilmId = getGalleryFilmId(film);
+  selectButton.dataset.gallerySelectionIndex = String(selectionIndex);
+  selectButton.setAttribute("aria-label", `Retirer ${film.titre} de la sélection`);
+  return selectButton;
+}
+
+function onGallerySelectionSummaryListClick(event) {
+  const button = event.target.closest(".gallery-select-toggle--summary");
+  if (!button) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const selectionIndex = Number(button.dataset.gallerySelectionIndex);
+  const filmId = button.dataset.galleryFilmId || "";
+  const filmAtIndex = galleryState.selectedFilms[selectionIndex];
+
+  if (filmAtIndex && getGalleryFilmId(filmAtIndex) === filmId) {
+    removeGalleryFilmFromSelectionAtIndex(selectionIndex);
+    return;
+  }
+
+  const film = galleryState.selectedFilms.find(
+    (selectedFilm) => getGalleryFilmId(selectedFilm) === filmId
+  );
+  if (film) removeGalleryFilmFromSelection(film);
+}
+
+function bindGallerySelectionSummaryList() {
+  const summaryList = document.getElementById("gallerySelectionSummaryList");
+  if (!summaryList || summaryList.dataset.bound === "true") return;
+  summaryList.dataset.bound = "true";
+  summaryList.addEventListener("click", onGallerySelectionSummaryListClick);
+}
+
+function renderGallerySelectionSummary() {
+  const summary = document.getElementById("gallerySelectionSummary");
+  const summaryCount = document.getElementById("gallerySelectionSummaryCount");
+  const summaryList = document.getElementById("gallerySelectionSummaryList");
+  if (!summary || !summaryList) return;
+
+  const selectedCount = galleryState.selectedFilms.length;
+  const showSummary = selectedCount >= 2;
+  summary.hidden = !showSummary;
+
+  if (!showSummary) {
+    summaryList.innerHTML = "";
+    return;
+  }
+
+  if (summaryCount) {
+    summaryCount.textContent = `${selectedCount} film${
+      selectedCount > 1 ? "s" : ""
+    } sélectionné${selectedCount > 1 ? "s" : ""}`;
+  }
+
+  summaryList.innerHTML = "";
+  const sortedFilms = [...galleryState.selectedFilms].sort(compareGalleryFilmsByTitle);
+  const fragment = document.createDocumentFragment();
+
+  sortedFilms.forEach((film) => {
+    const item = document.createElement("li");
+    item.className = "gallery-selection-summary__item";
+    const selectionIndex = galleryState.selectedFilms.indexOf(film);
+
+    const title = document.createElement("span");
+    title.className = "gallery-selection-summary__title";
+    title.textContent = film.titre || "";
+
+    item.appendChild(createGallerySummarySelectToggle(film, selectionIndex));
+    item.appendChild(title);
+    fragment.appendChild(item);
+  });
+
+  summaryList.appendChild(fragment);
+}
+
 function renderGallerySelection() {
   const grid = document.getElementById("gallerySelectionGrid");
   const count = document.getElementById("gallerySelectionCount");
@@ -656,6 +765,7 @@ function renderGallerySelection() {
   syncGallerySelectionActionButtons();
   syncGallerySelectFilteredButton();
   syncGallerySelectionPosterMode(selectedCount);
+  renderGallerySelectionSummary();
 
   if (selectedCount === 1) {
     grid.innerHTML = "";
@@ -916,6 +1026,7 @@ function setupGalleryPage() {
   galleryState.filteredFilms = [...galleryState.films];
   const applyGalleryFiltersDebounced = debounceGalleryAction(applyGalleryFilters);
   setupGalleryFilterOptions();
+  bindGallerySelectionSummaryList();
   setupGalleryCustomizer();
   renderGalleryGrid();
   renderGallerySelection();

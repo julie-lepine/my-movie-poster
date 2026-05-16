@@ -103,11 +103,22 @@
 
     <div class="gallery-layout">
       <div class="gallery-results">
-        <div id="galleryGrid" class="gallery-grid" aria-live="polite"></div>
+        <aside
+          id="gallerySelectionSummary"
+          class="gallery-selection-summary"
+          hidden
+          aria-label="Résumé des films sélectionnés"
+        >
+          <p id="gallerySelectionSummaryCount" class="gallery-selection-summary__count">0 film sélectionné</p>
+          <ul id="gallerySelectionSummaryList" class="gallery-selection-summary__list"></ul>
+        </aside>
+        <div class="gallery-results-grid">
+          <div id="galleryGrid" class="gallery-grid" aria-live="polite"></div>
 
-        <button id="galleryLoadMore" class="gallery-load-more" type="button" aria-label="Charger 10 posters de plus">
-          <span aria-hidden="true"></span>
-        </button>
+          <button id="galleryLoadMore" class="gallery-load-more" type="button" aria-label="Charger 10 posters de plus">
+            <span aria-hidden="true"></span>
+          </button>
+        </div>
       </div>
 
       <aside class="gallery-selection-panel" aria-label="Sélection de films">
