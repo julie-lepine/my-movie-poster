@@ -22,6 +22,7 @@ var galleryCustomizePreviewFrame = 0;
 var galleryCustomizePreviewNeedsRefresh = false;
 var galleryCustomizePreviewNeedsResize = false;
 var _galleryCustomizeResizeTimer = 0;
+var gallerySelectionMetricsFrame = 0;
 
 const GALLERY_POSTER_CSS_VARS = [
   "--poster-title-font",
@@ -66,6 +67,24 @@ function copyGalleryPosterCustomizationStyles(source, clone) {
     clone.style.removeProperty("background-position");
     clone.style.removeProperty("background-size");
   }
+}
+
+function syncGallerySelectionGridMetrics() {
+  const poster = document.querySelector(".gallery-selection-poster.poster-sheet");
+  const grid = document.getElementById("gallerySelectionGrid");
+  if (!poster || !grid || typeof syncGallerySelectionTitleMetrics !== "function") return;
+
+  syncGallerySelectionTitleMetrics(grid);
+}
+
+function scheduleGallerySelectionGridMetrics() {
+  if (gallerySelectionMetricsFrame) return;
+  gallerySelectionMetricsFrame = requestAnimationFrame(() => {
+    gallerySelectionMetricsFrame = requestAnimationFrame(() => {
+      gallerySelectionMetricsFrame = 0;
+      syncGallerySelectionGridMetrics();
+    });
+  });
 }
 
 function prepareGalleryCustomizeCloneLayout(clone) {
@@ -135,7 +154,7 @@ function syncGalleryCustomizePreview(options = {}) {
   clone.classList.add("gallery-customize-poster-clone");
   copyGalleryPosterCustomizationStyles(source, clone);
 
-  ["data-poster-layout"].forEach((name) => {
+  ["data-poster-layout", "data-gallery-selection"].forEach((name) => {
     if (source.hasAttribute(name)) clone.setAttribute(name, source.getAttribute(name));
     else clone.removeAttribute(name);
   });
@@ -143,13 +162,30 @@ function syncGalleryCustomizePreview(options = {}) {
   const sourceGrid = source.querySelector(".poster-grid");
   const targetGrid = clone.querySelector(".poster-grid");
   if (sourceGrid && targetGrid) {
-    if (sourceGrid.dataset.layout) targetGrid.dataset.layout = sourceGrid.dataset.layout;
-    else delete targetGrid.dataset.layout;
-    ["--poster-cols", "--poster-rows", "--poster-gap"].forEach((prop) => {
-      const value = sourceGrid.style.getPropertyValue(prop);
-      if (value) targetGrid.style.setProperty(prop, value);
-      else targetGrid.style.removeProperty(prop);
-    });
+    if (sourceGrid.dataset.gallerySelection === "true") {
+      targetGrid.dataset.gallerySelection = "true";
+    } else {
+      delete targetGrid.dataset.gallerySelection;
+    }
+    delete targetGrid.dataset.layout;
+    if (sourceGrid.dataset.cols) targetGrid.dataset.cols = sourceGrid.dataset.cols;
+    else delete targetGrid.dataset.cols;
+    if (sourceGrid.dataset.rows) targetGrid.dataset.rows = sourceGrid.dataset.rows;
+    else delete targetGrid.dataset.rows;
+    [
+      "--poster-cols",
+      "--poster-rows",
+      "--poster-gap",
+      "--poster-row-gap",
+      "--gallery-title-block-height",
+      "--gallery-unified-title-size",
+    ].forEach(
+      (prop) => {
+        const value = sourceGrid.style.getPropertyValue(prop);
+        if (value) targetGrid.style.setProperty(prop, value);
+        else targetGrid.style.removeProperty(prop);
+      }
+    );
   }
 
   [".poster-title", ".poster-subtitle"].forEach((selector) => {
@@ -200,6 +236,7 @@ function scheduleGalleryCustomizePreview(options = {}) {
     galleryCustomizePreviewNeedsResize = false;
     if (shouldRefresh) refreshGalleryCustomizePreview();
     else syncGalleryCustomizePreview({ resize: shouldResize });
+    scheduleGallerySelectionGridMetrics();
   });
 }
 
@@ -400,12 +437,22 @@ function setupGalleryFilterOptions() {
     fragment.appendChild(button);
   });
   colorRoot.appendChild(fragment);
+  syncGalleryColorButtons();
 }
 
 function syncGalleryColorButtons() {
   document.querySelectorAll(".gallery-color-swatch").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.color === galleryState.selectedColor);
   });
+  const clearColorBtn = document.getElementById("galleryClearColorFilter");
+  if (clearColorBtn) clearColorBtn.disabled = !galleryState.selectedColor;
+}
+
+function clearGalleryColorFilter() {
+  if (!galleryState.selectedColor) return;
+  galleryState.selectedColor = "";
+  syncGalleryColorButtons();
+  applyGalleryFilters();
 }
 
 function readGalleryFilters() {
@@ -602,13 +649,16 @@ function renderGalleryGrid() {
   }
 }
 
-function createGallerySelectionItem(film, layoutCount) {
+function createGallerySelectionItem(film, useThumbnails) {
   const item = document.createElement("div");
   item.className = "poster-film";
 
+  const thumb = document.createElement("div");
+  thumb.className = "poster-film__thumb";
+
   const img = document.createElement("img");
-  img.src = layoutCount === 100 ? getGalleryThumbnailSrc(film.image) : film.image;
-  if (layoutCount === 100) img.dataset.fallbackSrc = film.image;
+  img.src = useThumbnails ? getGalleryThumbnailSrc(film.image) : film.image;
+  if (useThumbnails) img.dataset.fallbackSrc = film.image;
   img.alt = "";
   img.loading = "eager";
   img.decoding = "async";
@@ -622,6 +672,7 @@ function createGallerySelectionItem(film, layoutCount) {
     { passive: true }
   );
   protectImageElement(img);
+  thumb.appendChild(img);
 
   const info = document.createElement("div");
   info.className = "film-info";
@@ -642,21 +693,17 @@ function createGallerySelectionItem(film, layoutCount) {
   year.className = "film-year";
   year.textContent = film.year || "";
 
+  const meta = document.createElement("div");
+  meta.className = "film-meta";
+  meta.appendChild(year);
+  meta.appendChild(circle);
+
   info.appendChild(title);
-  info.appendChild(year);
-  info.appendChild(circle);
-  item.appendChild(img);
+  info.appendChild(meta);
+  item.appendChild(thumb);
   item.appendChild(info);
 
   return item;
-}
-
-function getGallerySelectionLayout(count) {
-  if (count <= 25) {
-    return { layoutCount: 25, cols: Math.min(5, Math.max(1, count || 5)), gap: 18 };
-  }
-  if (count <= 48) return { layoutCount: 48, cols: 6, gap: 14 };
-  return { layoutCount: 100, cols: 10, gap: 7 };
 }
 
 function compareGalleryFilmsByTitle(a, b) {
@@ -773,17 +820,24 @@ function renderGallerySelection() {
   }
 
   grid.innerHTML = "";
-  const layout = getGallerySelectionLayout(selectedCount);
-  const rowCount = Math.max(1, Math.ceil(Math.max(selectedCount, 1) / layout.cols));
+  const layout = window.getGallerySelectionLayout(selectedCount);
   const styleTarget = poster || grid;
-  if (poster) poster.dataset.posterLayout = String(layout.layoutCount);
-  grid.dataset.layout = String(layout.layoutCount);
+  if (poster) {
+    poster.dataset.gallerySelection = "true";
+    poster.dataset.posterLayout = `${layout.cols}x${layout.rows}`;
+  }
+  grid.dataset.gallerySelection = "true";
+  grid.removeAttribute("data-layout");
+  grid.dataset.cols = String(layout.cols);
+  grid.dataset.rows = String(layout.rows);
   grid.style.setProperty("--poster-cols", String(layout.cols));
-  grid.style.setProperty("--poster-rows", String(rowCount));
+  grid.style.setProperty("--poster-rows", String(layout.rows));
   grid.style.setProperty("--poster-gap", `${layout.gap}px`);
+  grid.style.setProperty("--poster-row-gap", `${layout.rowGap}px`);
   styleTarget.style.setProperty("--poster-cols", String(layout.cols));
-  styleTarget.style.setProperty("--poster-rows", String(rowCount));
+  styleTarget.style.setProperty("--poster-rows", String(layout.rows));
   styleTarget.style.setProperty("--poster-gap", `${layout.gap}px`);
+  styleTarget.style.setProperty("--poster-row-gap", `${layout.rowGap}px`);
 
   if (!selectedCount) {
     const empty = document.createElement("p");
@@ -796,9 +850,15 @@ function renderGallerySelection() {
 
   const fragment = document.createDocumentFragment();
   galleryState.selectedFilms.forEach((film) => {
-    fragment.appendChild(createGallerySelectionItem(film, layout.layoutCount));
+    fragment.appendChild(createGallerySelectionItem(film, layout.useThumbnails));
   });
   grid.appendChild(fragment);
+  grid.querySelectorAll(".poster-film__thumb > img, .poster-film > img").forEach((imgEl) => {
+    if (!imgEl.complete) {
+      imgEl.addEventListener("load", scheduleGallerySelectionGridMetrics, { passive: true, once: true });
+    }
+  });
+  scheduleGallerySelectionGridMetrics();
   scheduleGalleryCustomizePreview({ refresh: true });
 }
 
@@ -840,6 +900,7 @@ function isGalleryCustomizerEventInsideCard(event, card) {
 async function addGallerySelectionToCart() {
   if (!galleryState.selectedFilms.length) return;
   const filmsToShow = galleryState.selectedFilms.slice(0, GALLERY_SELECTION_MAX_COUNT);
+  const selectionLayout = window.getGallerySelectionLayout(filmsToShow.length);
 
   const filmsPayload = filmsToShow.map((film) => ({
     titre: film.titre,
@@ -860,7 +921,9 @@ async function addGallerySelectionToCart() {
           type: "selection-poster",
           addedAt: new Date().toISOString(),
           customization: galleryTextCustomizer?.getState() || galleryState.customization,
-          layoutCount: getGallerySelectionLayout(filmsToShow.length).layoutCount,
+          layoutCount: selectionLayout.layoutCount,
+          posterCols: selectionLayout.cols,
+          posterRows: selectionLayout.rows,
           films: filmsPayload,
         };
 
@@ -1032,6 +1095,15 @@ function setupGalleryPage() {
   renderGallerySelection();
   syncGallerySelectFilteredButton();
 
+  let gallerySelectionResizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(gallerySelectionResizeTimer);
+    gallerySelectionResizeTimer = window.setTimeout(
+      () => scheduleGallerySelectionGridMetrics(),
+      120
+    );
+  });
+
   document
     .getElementById("galleryFilterToggle")
     ?.addEventListener("click", (event) => {
@@ -1053,6 +1125,9 @@ function setupGalleryPage() {
   document
     .getElementById("gallerySelectFiltered")
     ?.addEventListener("click", selectFilteredGalleryFilms);
+  document
+    .getElementById("galleryClearColorFilter")
+    ?.addEventListener("click", clearGalleryColorFilter);
 
   document.getElementById("galleryLoadMore")?.addEventListener("click", () => {
     galleryState.visibleCount += 10;

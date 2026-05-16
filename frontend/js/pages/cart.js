@@ -297,8 +297,12 @@ function createCartQuizFilmCard(film, options = {}) {
   const card = document.createElement("div");
   card.className = "poster-film";
   const useThumbs = options.useFilmThumbs === true;
+  const useGalleryThumb = options.gallerySquareThumb === true;
   const fullSrc = film.image || "";
   const displaySrc = film.previewImage || getCartFilmImageSrc(fullSrc, useThumbs);
+
+  const thumb = useGalleryThumb ? document.createElement("div") : null;
+  if (thumb) thumb.className = "poster-film__thumb";
 
   const img = document.createElement("img");
   img.src = displaySrc;
@@ -325,6 +329,7 @@ function createCartQuizFilmCard(film, options = {}) {
     { passive: true }
   );
   protectImageElement(img);
+  if (thumb) thumb.appendChild(img);
 
   const info = document.createElement("div");
   info.className = "film-info";
@@ -347,9 +352,17 @@ function createCartQuizFilmCard(film, options = {}) {
   protectImageElement(circle);
 
   info.appendChild(title);
-  info.appendChild(year);
-  info.appendChild(circle);
-  card.appendChild(img);
+  if (options.galleryMetaRow) {
+    const meta = document.createElement("div");
+    meta.className = "film-meta";
+    meta.appendChild(year);
+    meta.appendChild(circle);
+    info.appendChild(meta);
+  } else {
+    info.appendChild(year);
+    info.appendChild(circle);
+  }
+  card.appendChild(thumb || img);
   card.appendChild(info);
 
   return card;
@@ -371,12 +384,11 @@ function getCartQuizLayout(layoutCount) {
   return layoutByCount[layoutCount] || layoutByCount[100];
 }
 
-function getCartSelectionLayout(filmCount) {
-  if (filmCount <= 25) {
-    return { layoutCount: 25, cols: Math.min(5, Math.max(1, filmCount || 5)), gap: 18 };
+function getCartSelectionLayout(filmCount, item) {
+  if (typeof window.resolveGallerySelectionLayout === "function") {
+    return window.resolveGallerySelectionLayout(filmCount, item);
   }
-  if (filmCount <= 48) return { layoutCount: 48, cols: 6, gap: 14 };
-  return { layoutCount: 100, cols: 10, gap: 7 };
+  return window.getGallerySelectionLayout(filmCount);
 }
 
 function createCartQuizPosterPreview(item, previewOptions = {}) {
@@ -562,13 +574,17 @@ function createCartSelectionPosterPreview(item, previewOptions = {}) {
 
   const grid = document.createElement("div");
   grid.className = "poster-grid";
-  const layout = getCartSelectionLayout(films.length);
-  const rowCount = Math.max(1, Math.ceil(Math.max(films.length, 1) / layout.cols));
-  poster.dataset.posterLayout = String(layout.layoutCount);
-  grid.dataset.layout = String(layout.layoutCount);
+  const layout = getCartSelectionLayout(films.length, item);
+  poster.dataset.gallerySelection = "true";
+  poster.dataset.posterLayout = `${layout.cols}x${layout.rows}`;
+  grid.dataset.gallerySelection = "true";
+  grid.removeAttribute("data-layout");
+  grid.dataset.cols = String(layout.cols);
+  grid.dataset.rows = String(layout.rows);
   grid.style.setProperty("--poster-cols", String(layout.cols));
-  grid.style.setProperty("--poster-rows", String(rowCount));
+  grid.style.setProperty("--poster-rows", String(layout.rows));
   grid.style.setProperty("--poster-gap", `${layout.gap}px`);
+  grid.style.setProperty("--poster-row-gap", `${layout.rowGap}px`);
 
   if (films.length) {
     films.forEach((film) => {
@@ -578,7 +594,7 @@ function createCartSelectionPosterPreview(item, previewOptions = {}) {
             ...film,
             circleSrc: customization.filmCircleSrc || CART_CIRCLE_SRC,
           },
-          { useFilmThumbs, lazyImages }
+          { useFilmThumbs, lazyImages, gallerySquareThumb: true, galleryMetaRow: true }
         )
       );
     });
@@ -652,35 +668,53 @@ function readCartCssNumber(el, propertyName, fallback) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function getCartTitleFitWidth(titleEl) {
+  const cell = titleEl.closest(".poster-film");
+  if (!cell) return titleEl.clientWidth;
+  return Math.max(1, cell.clientWidth);
+}
+
 function fitCartPosterFilmTitle(titleEl) {
-  if (!titleEl || titleEl.clientWidth < 1 || titleEl.clientHeight < 1) return;
-  const fitKey = `${Math.round(titleEl.clientWidth)}x${Math.round(titleEl.clientHeight)}`;
+  const fitWidth = getCartTitleFitWidth(titleEl);
+  if (!titleEl || fitWidth < 1) return;
+
+  titleEl.style.width = "100%";
+  titleEl.style.maxWidth = "100%";
+
+  const maxSize = readCartCssNumber(titleEl, "--film-title-max-size", 10);
+  const minSize = readCartCssNumber(titleEl, "--film-title-min-size", Math.max(2, maxSize * 0.35));
+  const lineHeight = readCartCssNumber(titleEl, "--film-title-line-height", 1.05);
+  const label = (titleEl.textContent || "").trim();
+
+  const setTitleFontSize = (sizePx) => {
+    titleEl.style.setProperty("--film-title-fit-size", `${sizePx}px`);
+    titleEl.style.setProperty(
+      "--film-title-max-height",
+      `${(sizePx * lineHeight).toFixed(2)}px`
+    );
+  };
+
+  const fitsWidth = () => titleEl.scrollWidth <= fitWidth + 1;
+
+  const fitKey = `${fitWidth}x${label.length}`;
   if (titleEl.dataset.fitKey === fitKey) return;
 
-  const computed = getComputedStyle(titleEl);
-  const currentFontSize = parseFloat(computed.fontSize) || 10;
-  const maxSize = readCartCssNumber(titleEl, "--film-title-max-size", currentFontSize);
-  const minSize = readCartCssNumber(titleEl, "--film-title-min-size", Math.max(5, maxSize * 0.45));
-  const fits = () =>
-    titleEl.scrollWidth <= titleEl.clientWidth + 1 &&
-    titleEl.scrollHeight <= titleEl.clientHeight + 1;
-
-  titleEl.style.setProperty("--film-title-fit-size", `${maxSize}px`);
-  if (fits()) {
+  setTitleFontSize(maxSize);
+  if (fitsWidth()) {
     titleEl.dataset.fitKey = fitKey;
     return;
   }
 
   let low = minSize;
   let high = maxSize;
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 14; i++) {
     const mid = (low + high) / 2;
-    titleEl.style.setProperty("--film-title-fit-size", `${mid}px`);
-    if (fits()) low = mid;
+    setTitleFontSize(mid);
+    if (fitsWidth()) low = mid;
     else high = mid;
   }
 
-  titleEl.style.setProperty("--film-title-fit-size", `${low.toFixed(2)}px`);
+  setTitleFontSize(low);
   titleEl.dataset.fitKey = fitKey;
 }
 
@@ -700,10 +734,9 @@ function syncCartQuizPosterMetrics(poster) {
 
 /** Modal vitrine : fit titres seulement (inchangé). */
 function syncCartGalleryPosterMetrics(poster) {
-  poster.querySelectorAll(".film-title").forEach((titleEl) => {
-    delete titleEl.dataset.fitKey;
-    fitCartPosterFilmTitle(titleEl);
-  });
+  const grid = poster?.querySelector(".poster-grid");
+  if (!grid || typeof syncGallerySelectionTitleMetrics !== "function") return;
+  syncGallerySelectionTitleMetrics(grid);
 }
 
 /** Vignette panier : titres + cellules comme Mon Poster, après gabarit 340px. */

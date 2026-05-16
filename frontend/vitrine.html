@@ -61,7 +61,17 @@
       <form id="galleryFilters" class="gallery-filters" aria-label="Filtres de la vitrine">
         <fieldset class="gallery-filter-group gallery-filter-colors">
           <legend>Couleur</legend>
-          <div id="galleryColorFilters" class="gallery-color-swatches"></div>
+          <div class="gallery-filter-colors__row">
+            <div id="galleryColorFilters" class="gallery-color-swatches"></div>
+            <button
+              id="galleryClearColorFilter"
+              class="gallery-clear-color-filter"
+              type="button"
+              disabled
+            >
+              Effacer couleur
+            </button>
+          </div>
         </fieldset>
 
         <label class="gallery-filter-group">
@@ -123,12 +133,12 @@
 
       <aside class="gallery-selection-panel" aria-label="Sélection de films">
         <div id="galleryMultiPosterWrap" class="gallery-multi-poster-wrap">
-          <div class="gallery-selection-poster poster-sheet poster-preview-watermark" data-poster-layout="25">
+          <div class="gallery-selection-poster poster-sheet poster-preview-watermark" data-gallery-selection="true" data-poster-layout="0">
             <header class="poster-header">
               <div id="gallerySelectionTitle" class="poster-title">Ma sélection</div>
               <div id="gallerySelectionSubtitle" class="poster-subtitle">Création personnalisée</div>
             </header>
-            <div id="gallerySelectionGrid" class="poster-grid" data-layout="25" aria-live="polite">
+            <div id="gallerySelectionGrid" class="poster-grid" data-gallery-selection="true" aria-live="polite">
               <p class="gallery-selection-empty">Coche des films pour composer ton poster.</p>
             </div>
             <footer class="poster-footer" aria-label="Marque">
@@ -328,6 +338,7 @@
 
 <script src="js/common.js"></script>
 <script src="js/data/filmsDB.js"></script>
+<script src="js/core/gallery-selection-layout.js"></script>
 <script src="js/core/text-customizer.js"></script>
 <script src="js/pages/vitrine.js"></script>
 </body>

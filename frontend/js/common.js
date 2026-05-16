@@ -68,12 +68,24 @@ function loadMppPosterJpeg() {
 
   if (!mppPosterJpegLoadPromise) {
     mppPosterJpegLoadPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "js/core/poster-jpeg.js";
-      script.defer = true;
-      script.onload = () => resolve(window.MppPosterJpeg);
-      script.onerror = () => reject(new Error("Impossible de charger le renderer JPEG."));
-      document.head.appendChild(script);
+      const loadScript = (src) =>
+        new Promise((res, rej) => {
+          const script = document.createElement("script");
+          script.src = src;
+          script.defer = true;
+          script.onload = () => res();
+          script.onerror = () => rej(new Error(`Impossible de charger ${src}.`));
+          document.head.appendChild(script);
+        });
+
+      const start = window.getGallerySelectionLayout
+        ? Promise.resolve()
+        : loadScript("js/core/gallery-selection-layout.js");
+
+      start
+        .then(() => loadScript("js/core/poster-jpeg.js"))
+        .then(() => resolve(window.MppPosterJpeg))
+        .catch(reject);
     });
   }
 

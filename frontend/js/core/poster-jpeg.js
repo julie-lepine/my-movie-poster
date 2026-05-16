@@ -118,12 +118,21 @@
   }
 
   function getSelectionColumnCount(count) {
+    if (typeof window.getGallerySelectionLayout === "function") {
+      return window.getGallerySelectionLayout(count).cols;
+    }
     if (count <= 1) return 1;
-    if (count <= 4) return 2;
-    if (count <= 9) return 3;
-    if (count <= 16) return 4;
-    if (count <= 25) return 5;
-    return 6;
+    if (count <= 6) return 2;
+    return Math.min(10, Math.ceil(Math.sqrt(count)));
+  }
+
+  function resolveSelectionPosterLayout(item, filmCount) {
+    if (typeof window.resolveGallerySelectionLayout === "function") {
+      return window.resolveGallerySelectionLayout(filmCount, item);
+    }
+    const cols = getSelectionColumnCount(filmCount);
+    const rows = Math.ceil(filmCount / cols) || 1;
+    return { cols, rows, gap: 14 };
   }
 
   function getSelectionRowHeight(columnCount, scale) {
@@ -300,8 +309,9 @@
     const width = options.width || 1400;
     const scale = width / 340;
     const films = item.films || [];
-    const cols = getSelectionColumnCount(films.length);
-    const rows = Math.max(1, Math.ceil(films.length / cols));
+    const layout = resolveSelectionPosterLayout(item, films.length);
+    const cols = layout.cols;
+    const rows = layout.rows;
     const rowHeight = getSelectionRowHeight(cols, scale);
     const padding = 14 * scale;
     const headerHeight = 46 * scale;
