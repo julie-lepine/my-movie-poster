@@ -114,8 +114,14 @@
     if (!el) return;
     if (imageUrl) {
       el.style.backgroundImage = `url("${imageUrl}")`;
+      el.style.backgroundRepeat = "no-repeat";
+      el.style.backgroundPosition = "center";
+      el.style.backgroundSize = "100% 100%";
     } else {
       el.style.removeProperty("background-image");
+      el.style.removeProperty("background-repeat");
+      el.style.removeProperty("background-position");
+      el.style.removeProperty("background-size");
     }
   }
 

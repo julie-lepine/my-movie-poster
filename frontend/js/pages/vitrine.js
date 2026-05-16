@@ -19,7 +19,54 @@ const GALLERY_SQUARE_FRAME_INSET_PCT = 8;
 
 var galleryTextCustomizer = null;
 var galleryCustomizePreviewFrame = 0;
+var galleryCustomizePreviewNeedsRefresh = false;
+var galleryCustomizePreviewNeedsResize = false;
 var _galleryCustomizeResizeTimer = 0;
+
+const GALLERY_POSTER_CSS_VARS = [
+  "--poster-title-font",
+  "--poster-subtitle-font",
+  "--poster-title-color",
+  "--poster-subtitle-color",
+  "--poster-film-title-color",
+  "--poster-film-year-color",
+  "--poster-title-font-size",
+  "--poster-subtitle-font-size",
+  "--poster-cols",
+  "--poster-rows",
+  "--poster-gap",
+];
+
+const GALLERY_PREVIEW_RESIZE_KEYS = new Set([
+  "title",
+  "subtitle",
+  "titleSize",
+  "subtitleSize",
+  "backgroundImage",
+  "titleFormat",
+  "subtitleFormat",
+]);
+
+function copyGalleryPosterCustomizationStyles(source, clone) {
+  GALLERY_POSTER_CSS_VARS.forEach((prop) => {
+    const value = source.style.getPropertyValue(prop);
+    if (value) clone.style.setProperty(prop, value);
+    else clone.style.removeProperty(prop);
+  });
+
+  const bgImage = source.style.backgroundImage;
+  if (bgImage && bgImage !== "none") {
+    clone.style.backgroundImage = bgImage;
+    clone.style.backgroundRepeat = "no-repeat";
+    clone.style.backgroundPosition = "center";
+    clone.style.backgroundSize = "100% 100%";
+  } else {
+    clone.style.removeProperty("background-image");
+    clone.style.removeProperty("background-repeat");
+    clone.style.removeProperty("background-position");
+    clone.style.removeProperty("background-size");
+  }
+}
 
 function prepareGalleryCustomizeCloneLayout(clone) {
   clone.style.width = `${GALLERY_PREVIEW_DESIGN_W}px`;
@@ -72,6 +119,57 @@ function onGalleryCustomizeWindowResize() {
   }, 150);
 }
 
+function syncGalleryCustomizePreview(options = {}) {
+  const modal = document.getElementById("galleryCustomizeModal");
+  const preview = document.getElementById("galleryCustomizePreview");
+  const source = document.querySelector(".gallery-selection-poster.poster-sheet");
+  const clone = preview?.querySelector(".gallery-customize-poster-clone");
+  if (!modal || modal.hidden || !preview || !source) return;
+  if (!clone) {
+    refreshGalleryCustomizePreview();
+    return;
+  }
+
+  const classTokens = source.className.split(/\s+/).filter(Boolean);
+  clone.className = classTokens.filter((token) => token !== "poster-preview-watermark").join(" ");
+  clone.classList.add("gallery-customize-poster-clone");
+  copyGalleryPosterCustomizationStyles(source, clone);
+
+  ["data-poster-layout"].forEach((name) => {
+    if (source.hasAttribute(name)) clone.setAttribute(name, source.getAttribute(name));
+    else clone.removeAttribute(name);
+  });
+
+  const sourceGrid = source.querySelector(".poster-grid");
+  const targetGrid = clone.querySelector(".poster-grid");
+  if (sourceGrid && targetGrid) {
+    if (sourceGrid.dataset.layout) targetGrid.dataset.layout = sourceGrid.dataset.layout;
+    else delete targetGrid.dataset.layout;
+    ["--poster-cols", "--poster-rows", "--poster-gap"].forEach((prop) => {
+      const value = sourceGrid.style.getPropertyValue(prop);
+      if (value) targetGrid.style.setProperty(prop, value);
+      else targetGrid.style.removeProperty(prop);
+    });
+  }
+
+  [".poster-title", ".poster-subtitle"].forEach((selector) => {
+    const sourceEl = source.querySelector(selector);
+    const targetEl = clone.querySelector(selector);
+    if (!sourceEl || !targetEl) return;
+    targetEl.textContent = sourceEl.textContent;
+    targetEl.className = sourceEl.className;
+  });
+
+  const sourceCircles = source.querySelectorAll(".film-circle");
+  const targetCircles = clone.querySelectorAll(".film-circle");
+  sourceCircles.forEach((sourceCircle, index) => {
+    const targetCircle = targetCircles[index];
+    if (targetCircle && targetCircle.src !== sourceCircle.src) targetCircle.src = sourceCircle.src;
+  });
+
+  if (options.resize) sizeGalleryCustomizePreviewClone(clone);
+}
+
 function refreshGalleryCustomizePreview() {
   const modal = document.getElementById("galleryCustomizeModal");
   const preview = document.getElementById("galleryCustomizePreview");
@@ -90,11 +188,18 @@ function refreshGalleryCustomizePreview() {
   });
 }
 
-function scheduleGalleryCustomizePreview() {
+function scheduleGalleryCustomizePreview(options = {}) {
+  if (options.refresh) galleryCustomizePreviewNeedsRefresh = true;
+  if (options.resize) galleryCustomizePreviewNeedsResize = true;
   if (galleryCustomizePreviewFrame) return;
   galleryCustomizePreviewFrame = requestAnimationFrame(() => {
     galleryCustomizePreviewFrame = 0;
-    refreshGalleryCustomizePreview();
+    const shouldRefresh = galleryCustomizePreviewNeedsRefresh;
+    const shouldResize = galleryCustomizePreviewNeedsResize;
+    galleryCustomizePreviewNeedsRefresh = false;
+    galleryCustomizePreviewNeedsResize = false;
+    if (shouldRefresh) refreshGalleryCustomizePreview();
+    else syncGalleryCustomizePreview({ resize: shouldResize });
   });
 }
 
@@ -575,7 +680,7 @@ function renderGallerySelection() {
     empty.className = "gallery-selection-empty";
     empty.textContent = "Coche des films pour composer ton poster.";
     grid.appendChild(empty);
-    scheduleGalleryCustomizePreview();
+    scheduleGalleryCustomizePreview({ refresh: true });
     return;
   }
 
@@ -584,7 +689,7 @@ function renderGallerySelection() {
     fragment.appendChild(createGallerySelectionItem(film, layout.layoutCount));
   });
   grid.appendChild(fragment);
-  scheduleGalleryCustomizePreview();
+  scheduleGalleryCustomizePreview({ refresh: true });
 }
 
 function openGalleryCustomizer() {
@@ -592,7 +697,7 @@ function openGalleryCustomizer() {
   if (!modal) return;
   galleryTextCustomizer?.writeControls();
   modal.hidden = false;
-  scheduleGalleryCustomizePreview();
+  scheduleGalleryCustomizePreview({ refresh: true });
   window.removeEventListener("resize", onGalleryCustomizeWindowResize);
   window.addEventListener("resize", onGalleryCustomizeWindowResize);
   document.getElementById("galleryTitleInput")?.focus();
@@ -680,10 +785,13 @@ function setupGalleryCustomizer() {
       subtitleFont:
         document.getElementById("gallerySubtitleFontSelect")?.value ||
         "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-      titleSize: 34,
-      subtitleSize: 22,
+      titleSize: 22,
+      subtitleSize: 11,
       titleColor: "#25272d",
       subtitleColor: "#5c606b",
+      filmTitleColor: "#31343c",
+      filmYearColor: "#5c606b",
+      filmCircleSrc: GALLERY_CIRCLE_SRC,
       backgroundImage: "",
     },
     controls: {
@@ -697,6 +805,9 @@ function setupGalleryCustomizer() {
       subtitleSizeLabel: "gallerySubtitleSizeValue",
       titleColorInput: "galleryTitleColorInput",
       subtitleColorInput: "gallerySubtitleColorInput",
+      filmTitleColorInput: "galleryFilmTitleColorInput",
+      filmYearColorInput: "galleryFilmYearColorInput",
+      filmCircleSelect: "galleryFilmCircleSelect",
       backgroundSelect: "galleryBackgroundSelect",
       backgroundUpload: "galleryBackgroundUpload",
       resetButton: "galleryResetCustomization",
@@ -724,9 +835,11 @@ function setupGalleryCustomizer() {
       subtitleNormalWeight: "700",
       subtitleBoldWeight: "800",
     },
-    onChange: (customizer) => {
+    onChange: (customizer, meta) => {
       galleryState.customization = customizer.getState();
-      scheduleGalleryCustomizePreview();
+      const changedKeys = meta?.changedKeys || [];
+      const needsResize = changedKeys.some((key) => GALLERY_PREVIEW_RESIZE_KEYS.has(key));
+      scheduleGalleryCustomizePreview({ resize: needsResize });
     },
   });
 

@@ -1297,6 +1297,22 @@ img {
   transform-origin: top left;
   pointer-events: none;
   overflow: hidden;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+}
+
+#galleryCustomizePreview .gallery-customize-poster-clone .poster-title,
+#galleryCustomizePreview .gallery-customize-poster-clone .poster-subtitle {
+  max-width: 100%;
+}
+
+#galleryCustomizePreview .gallery-customize-poster-clone .film-title {
+  color: var(--poster-film-title-color, #31343c);
+}
+
+#galleryCustomizePreview .gallery-customize-poster-clone .film-year {
+  color: var(--poster-film-year-color, #5c606b);
 }
 
 .poster-large-preview-modal {
@@ -3170,6 +3186,7 @@ img {
 
 /* Vitrine : aperçu à l'échelle, mais même structure produit que Mon Poster. */
 .gallery-selection-poster.poster-sheet {
+  container-type: inline-size;
   width: min(100%, 340px);
   min-width: 0;
   max-width: 100%;
@@ -3193,18 +3210,24 @@ img {
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 2px;
+  gap: clamp(1px, 0.35cqi, 3px);
   overflow: hidden;
 }
 
 .gallery-selection-poster.poster-sheet .poster-title {
-  font-size: min(var(--poster-title-font-size, 24px), clamp(18px, 6cqi, 24px));
-  line-height: 0.92;
+  font-family: var(--poster-title-font, system-ui, sans-serif);
+  color: var(--poster-title-color, #25272d);
+  font-size: clamp(14px, var(--poster-title-font-size, 22px), 40px);
+  line-height: 0.95;
+  max-width: 100%;
 }
 
 .gallery-selection-poster.poster-sheet .poster-subtitle {
-  font-size: min(var(--poster-subtitle-font-size, 12px), clamp(9px, 3cqi, 12px));
-  line-height: 1;
+  font-family: var(--poster-subtitle-font, system-ui, sans-serif);
+  color: var(--poster-subtitle-color, #5c606b);
+  font-size: clamp(9px, var(--poster-subtitle-font-size, 11px), 20px);
+  line-height: 1.05;
+  max-width: 100%;
 }
 
 .gallery-selection-poster.poster-sheet .poster-grid {
@@ -3294,6 +3317,7 @@ img {
   line-height: 1.05;
   width: 100%;
   text-align: center;
+  color: var(--poster-film-title-color, #31343c);
 }
 
 .gallery-selection-poster.poster-sheet .film-year {
@@ -3301,6 +3325,7 @@ img {
   line-height: 1;
   width: 100%;
   text-align: center;
+  color: var(--poster-film-year-color, #5c606b);
 }
 
 .gallery-selection-poster.poster-sheet .film-circle {
