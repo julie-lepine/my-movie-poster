@@ -744,6 +744,8 @@ body > main,
   overflow: hidden;
   background: #111827;
   color: #fff;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
 }
 
 .gallery-card-preview {
@@ -2713,6 +2715,36 @@ body > main,
   flex-shrink: 0;
 }
 
+/* Mon Poster : année centrée sur la ligne, pastille à droite */
+.poster-sheet:not(.gallery-selection-poster) .poster-film .film-meta {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+  margin-top: clamp(2px, 0.4cqi, 5px);
+  padding-top: clamp(1px, 0.2cqi, 2px);
+}
+
+.poster-sheet:not(.gallery-selection-poster) .poster-film .film-meta .film-year {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-self: center;
+  width: auto;
+  max-width: calc(100% - 1.2em);
+  text-align: center;
+  margin: 0;
+}
+
+.poster-sheet:not(.gallery-selection-poster) .poster-film .film-meta .film-circle {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+  margin: 0;
+}
+
 /* 25 films : Mon Poster plein format (pas .gallery-selection-poster vitrine/panier) */
 .poster-sheet:not(.gallery-selection-poster) .poster-grid[data-layout="25"] .poster-film .film-title {
   --film-title-max-size: 30px;
@@ -3251,12 +3283,16 @@ body > main,
   justify-content: center;
 }
 
-.poster-film .film-circle,
-.poster-film .film-title,
-.poster-film .film-year {
+.poster-film .film-title {
   justify-self: center;
   align-self: center;
   text-align: center;
+}
+
+.poster-sheet:not(.gallery-selection-poster) .poster-film .film-meta .film-year,
+.poster-sheet:not(.gallery-selection-poster) .poster-film .film-meta .film-circle {
+  justify-self: unset;
+  align-self: unset;
 }
 
 /* Structure produit : header 15%, grille 75%, footer 10%. */
@@ -3468,6 +3504,8 @@ body > main,
   width: 100%;
   min-width: 0;
   flex-shrink: 0;
+  margin-top: clamp(1px, 0.4cqi, 3px);
+  padding-top: clamp(1px, 0.2cqi, 2px);
 }
 
 .gallery-selection-poster.poster-sheet .film-title {
@@ -4020,14 +4058,16 @@ button:hover {
 .cart-thumb-poster-frame
   > .poster-sheet[data-poster-layout]:not(.gallery-selection-poster)
   .poster-film
+  .film-meta
   .film-circle {
   width: clamp(2px, 4.5cqi, 8px) !important;
   height: clamp(2px, 4.5cqi, 8px) !important;
   max-width: 22%;
   max-height: 22%;
   object-fit: contain;
-  margin: 0 auto;
+  margin: 0;
   flex-shrink: 0;
+  justify-self: end;
 }
 
 .cart-thumb-poster-frame
@@ -4044,6 +4084,7 @@ button:hover {
   > .poster-sheet[data-poster-layout]:not(.gallery-selection-poster)
   .poster-grid[data-layout="25"]
   .poster-film
+  .film-meta
   .film-circle {
   width: clamp(3px, 3.5cqi, 7px) !important;
   height: clamp(3px, 3.5cqi, 7px) !important;
@@ -4073,6 +4114,7 @@ button:hover {
   > .poster-sheet[data-poster-layout]:not(.gallery-selection-poster)
   .poster-grid[data-layout="48"]
   .poster-film
+  .film-meta
   .film-circle {
   width: clamp(2px, 3cqi, 6px) !important;
   height: clamp(2px, 3cqi, 6px) !important;
@@ -4102,6 +4144,7 @@ button:hover {
   > .poster-sheet[data-poster-layout]:not(.gallery-selection-poster)
   .poster-grid[data-layout="100"]
   .poster-film
+  .film-meta
   .film-circle {
   width: clamp(2px, 2.2cqi, 4px) !important;
   height: clamp(2px, 2.2cqi, 4px) !important;

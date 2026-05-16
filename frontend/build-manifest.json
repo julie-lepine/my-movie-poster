@@ -1,0 +1,118 @@
+{
+  "version": "20260516",
+  "css": {
+    "base": {
+      "raw": "css/base.css",
+      "min": "css/base.min.css",
+      "bytesRaw": 5117,
+      "bytesMin": 4132
+    },
+    "home": {
+      "raw": "css/home.css",
+      "min": "css/home.min.css",
+      "bytesRaw": 3546,
+      "bytesMin": 2938
+    },
+    "faq": {
+      "raw": "css/faq.css",
+      "min": "css/faq.min.css",
+      "bytesRaw": 654,
+      "bytesMin": 531
+    },
+    "vitrine": {
+      "raw": "css/vitrine.css",
+      "min": "css/vitrine.min.css",
+      "bytesRaw": 24976,
+      "bytesMin": 20404
+    },
+    "poster": {
+      "raw": "css/poster.css",
+      "min": "css/poster.min.css",
+      "bytesRaw": 50498,
+      "bytesMin": 40761
+    },
+    "cart": {
+      "raw": "css/cart.css",
+      "min": "css/cart.min.css",
+      "bytesRaw": 34398,
+      "bytesMin": 27909
+    }
+  },
+  "js": {
+    "js/common.js": {
+      "min": "js/common.min.js",
+      "bytesRaw": 3850,
+      "bytesMin": 3265
+    },
+    "js/core/gallery-selection-layout.js": {
+      "min": "js/core/gallery-selection-layout.min.js",
+      "bytesRaw": 8894,
+      "bytesMin": 7583
+    },
+    "js/core/mapping.js": {
+      "min": "js/core/mapping.min.js",
+      "bytesRaw": 3178,
+      "bytesMin": 2707
+    },
+    "js/core/mpp-dom.js": {
+      "min": "js/core/mpp-dom.min.js",
+      "bytesRaw": 2015,
+      "bytesMin": 1943
+    },
+    "js/core/mpp-fonts.js": {
+      "min": "js/core/mpp-fonts.min.js",
+      "bytesRaw": 1418,
+      "bytesMin": 1165
+    },
+    "js/core/poster-jpeg.js": {
+      "min": "js/core/poster-jpeg.min.js",
+      "bytesRaw": 13647,
+      "bytesMin": 12219
+    },
+    "js/core/recommend.js": {
+      "min": "js/core/recommend.min.js",
+      "bytesRaw": 1847,
+      "bytesMin": 1529
+    },
+    "js/core/text-customizer.js": {
+      "min": "js/core/text-customizer.min.js",
+      "bytesRaw": 14052,
+      "bytesMin": 11486
+    },
+    "js/pages/cart.js": {
+      "min": "js/pages/cart.min.js",
+      "bytesRaw": 44171,
+      "bytesMin": 39142
+    },
+    "js/pages/poster-page.js": {
+      "min": "js/pages/poster-page.min.js",
+      "bytesRaw": 4767,
+      "bytesMin": 4096
+    },
+    "js/pages/vitrine.js": {
+      "min": "js/pages/vitrine.min.js",
+      "bytesRaw": 42957,
+      "bytesMin": 38658
+    },
+    "js/poster/poster-preview-host.js": {
+      "min": "js/poster/poster-preview-host.min.js",
+      "bytesRaw": 5777,
+      "bytesMin": 4669
+    },
+    "js/poster/poster.js": {
+      "min": "js/poster/poster.min.js",
+      "bytesRaw": 32953,
+      "bytesMin": 30367
+    },
+    "js/state/mpp-defaults.js": {
+      "min": "js/state/mpp-defaults.min.js",
+      "bytesRaw": 521,
+      "bytesMin": 457
+    },
+    "js/state/mpp-state.js": {
+      "min": "js/state/mpp-state.min.js",
+      "bytesRaw": 160,
+      "bytesMin": 71
+    }
+  }
+}

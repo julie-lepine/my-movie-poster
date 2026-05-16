@@ -352,16 +352,11 @@ function createCartQuizFilmCard(film, options = {}) {
   protectImageElement(circle);
 
   info.appendChild(title);
-  if (options.galleryMetaRow) {
-    const meta = document.createElement("div");
-    meta.className = "film-meta";
-    meta.appendChild(year);
-    meta.appendChild(circle);
-    info.appendChild(meta);
-  } else {
-    info.appendChild(year);
-    info.appendChild(circle);
-  }
+  const meta = document.createElement("div");
+  meta.className = "film-meta";
+  meta.appendChild(year);
+  meta.appendChild(circle);
+  info.appendChild(meta);
   card.appendChild(thumb || img);
   card.appendChild(info);
 

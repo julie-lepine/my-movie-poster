@@ -390,9 +390,13 @@ function generatePoster(films) {
     circle.loading = "eager";
     protectImageElement(circle);
 
+    const meta = document.createElement("div");
+    meta.className = "film-meta";
+    meta.appendChild(yearEl);
+    meta.appendChild(circle);
+
     info.appendChild(titleEl);
-    info.appendChild(yearEl);
-    info.appendChild(circle);
+    info.appendChild(meta);
     card.appendChild(img);
     card.appendChild(info);
 
